@@ -1,24 +1,45 @@
-folio 0.1.1 is out.
+folio 0.2.0 is out.
 
-This patch release follows 0.1.0 by a day. It fixes one packaging defect.
+This release makes folio quicker to start and steadier to load.
 
-A site that installed folio with bun could not build: the generated client entry
-imported `@fontsource-variable/geist` and `@fontsource-variable/geist-mono` as
-bare package names, which Vite resolves from the site's root, and bun does not
-hoist a dependency's dependencies there. The plugin now resolves each font's
-stylesheet from folio's own install and puts the absolute path in the entry, so
-the fonts stay folio's dependencies.
+## Start in three commands
+
+```sh
+bun add -d https://github.com/risinghq/folio/releases/latest/download/folio.tgz
+bunx folio init
+bun run docs:dev
+```
+
+- A `folio` command runs the site with no Vite config: `init`, `dev`, `build`
+  and `preview`. `init` writes a starter manual and the `docs:dev`, `docs:build`
+  and `docs:preview` scripts. `build` writes to `.folio/`.
+- Each release attaches the tarball as `folio.tgz` too, so the `releases/latest`
+  URL above always installs the newest version.
+- `title`, `version`, `description` and `repository` default to the fields of
+  `package.json`. Other options go in its `folio` field.
+
+## A home page in markdown
+
+`docs/index.md` is the home page. A paragraph of links in it becomes a row of
+buttons, and islands work there as on any page. Pages can show images from the
+docs folder; the build copies them, and each `<img>` carries its width and
+height.
+
+## No shift while fonts load
+
+The site preloads the Latin Geist fonts and sets text in a local fallback scaled
+to Geist's metrics, so the swap does not move the page.
+
+## Breaking changes
+
+- The `landing` option is gone. Move the landing island's content to
+  `docs/index.md`, and place an island there with `<!-- island NAME -->` if it
+  needs one.
+- `title` is optional. A site whose `title` matched its package name can drop
+  it.
 
 ## Upgrade
 
-Install the new tarball over the old one:
-
+```sh
+bun add -d https://github.com/risinghq/folio/releases/download/v0.2.0/folio.tgz
 ```
-bun add @risinghq/folio@https://github.com/risinghq/folio/releases/download/v0.1.1/risinghq-folio-0.1.1.tgz
-```
-
-A site that added the two `@fontsource-variable` packages to its own
-`package.json` as a workaround can remove them.
-
-No breaking changes and no known problems. The change list is the fix, its test
-and this version bump.

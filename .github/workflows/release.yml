@@ -60,17 +60,20 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
+      # folio.tgz keeps one name across versions, so releases/latest/download/folio.tgz
+      # is the install URL the manual gives.
       - name: Pack the tarball
         run: |
           mkdir "$RUNNER_TEMP/package"
           npm pack --pack-destination "$RUNNER_TEMP/package"
+          cp "$RUNNER_TEMP"/package/*.tgz "$RUNNER_TEMP/package/folio.tgz"
 
-      - name: Tarball installs and exports the API
+      - name: Tarball installs, exports the API and builds a starter site
         run: |
           mkdir "$RUNNER_TEMP/consumer"
           cd "$RUNNER_TEMP/consumer"
           npm init -y > /dev/null
-          npm install "$RUNNER_TEMP"/package/*.tgz
+          npm install -D "$RUNNER_TEMP/package/folio.tgz"
           node --input-type=module -e '
             const { folio } = await import("@risinghq/folio");
             const { start } = await import("@risinghq/folio/client");
@@ -78,6 +81,10 @@ jobs:
               throw new Error("missing export");
             }
           '
+          npx folio init
+          npm run docs:build
+          test -f .folio/index.html
+          test -f .folio/docs/getting-started/index.html
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
