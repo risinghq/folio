@@ -1,7 +1,6 @@
 {
   "name": "@risinghq/folio",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "description": "A documentation site from a repository's docs folder, built with Vite and Solid.",
   "license": "MIT",
   "files": [
