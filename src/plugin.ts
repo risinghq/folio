@@ -6,7 +6,7 @@ import { dirname, extname, isAbsolute, join, resolve } from "node:path";
 import type { Plugin, ResolvedConfig, Rolldown, ViteDevServer } from "vite";
 
 import { agentFiles } from "./agents.ts";
-import { defaultBranch } from "./branch.ts";
+import { readCheckout } from "./checkout.ts";
 import { exportedIslands, missingIslands } from "./island-names.ts";
 import {
   homePage,
@@ -50,14 +50,34 @@ export function entryModule(root: string, options: ResolvedOptions): string {
   ].join("\n");
 }
 
+function readJson(file: string): PackageInfo {
+  return JSON.parse(readFileSync(file, "utf8")) as PackageInfo;
+}
+
 /** The nearest `package.json` at or above `dir`, or none. */
 export function readPackage(dir: string): PackageInfo {
   for (let current = dir; ; current = dirname(current)) {
     const file = join(current, "package.json");
-    if (existsSync(file))
-      return JSON.parse(readFileSync(file, "utf8")) as PackageInfo;
+    if (existsSync(file)) return readJson(file);
     if (dirname(current) === current) return {};
   }
+}
+
+/**
+ * The options for a site at `root`. Its own `package.json` holds the `folio`
+ * field; the package that field's `package` names, else the same one, supplies
+ * the project's name, version and links.
+ */
+export function siteOptions(
+  input: FolioOptions,
+  root: string,
+): ResolvedOptions {
+  const site = readPackage(root);
+  const target = input.package ?? site.folio?.package;
+  const project = target ? readJson(join(root, target, "package.json")) : site;
+  const pkg = { ...project, folio: site.folio };
+  const docs = resolveOptions(input, pkg).docs;
+  return resolveOptions(input, pkg, readCheckout(join(root, docs)));
 }
 
 type Route =
@@ -328,9 +348,7 @@ export function folio(input: FolioOptions = {}): Plugin {
     },
     configResolved(resolved) {
       config = resolved;
-      options = resolveOptions(input, readPackage(resolved.root), {
-        branch: defaultBranch(resolved.root),
-      });
+      options = siteOptions(input, resolved.root);
     },
     resolveId(id) {
       return id === entryId ? resolvedEntryId : null;

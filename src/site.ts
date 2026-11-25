@@ -7,7 +7,7 @@ import { imageSize } from "image-size";
 import type { Routes } from "./layout.ts";
 import { readManual, type PageEntry } from "./manual.ts";
 import { renderPage, type RenderedPage } from "./markdown.ts";
-import type { ResolvedOptions } from "./options.ts";
+import { repositoryFileUrl, type ResolvedOptions } from "./options.ts";
 
 export interface Site {
   pages: PageEntry[];
@@ -46,9 +46,7 @@ function readImageSize(
 
 /** A docs folder file on the repository's web host, or its bare name with no repository. */
 export function docsSourceUrl(options: ResolvedOptions, file: string): string {
-  return options.repository
-    ? `${options.repository}/blob/${options.branch}/${options.docsPath}/${file}`
-    : file;
+  return repositoryFileUrl(options, "blob", file) ?? file;
 }
 
 /** Reads the docs folder's index and renders every page it lists, and the home page. */

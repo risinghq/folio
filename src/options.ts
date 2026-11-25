@@ -20,6 +20,13 @@ export interface FolioOptions {
   /** The docs folder's path inside the repository. */
   docsPath?: string;
   /**
+   * The folder, relative to the Vite root, of the package the site documents.
+   * Its `package.json` supplies the title, version, description and npm link.
+   */
+  package?: string;
+  /** The npm package the header links to. `false` links none. */
+  npm?: string | false;
+  /**
    * A module, relative to the Vite root, whose default export maps an island
    * name to a loader: `{ "hover-tap": () => import("./demos/hover-tap") }`.
    */
@@ -47,14 +54,24 @@ export interface PackageInfo {
   description?: string;
   homepage?: string;
   repository?: string | { url?: string };
+  private?: boolean;
   /** folio's options, for a site that has no Vite config of its own. */
   folio?: FolioOptions;
 }
 
-type Optional = "repository" | "islands" | "version" | "url" | "ogImage";
+type Optional =
+  | "repository"
+  | "islands"
+  | "version"
+  | "url"
+  | "ogImage"
+  | "package";
 
-export type ResolvedOptions = Required<Omit<FolioOptions, Optional>> &
-  Pick<FolioOptions, Optional>;
+export type ResolvedOptions = Required<Omit<FolioOptions, Optional | "npm">> &
+  Pick<FolioOptions, Optional> & {
+    /** The npm package the header links to. */
+    npm?: string;
+  };
 
 /** A `repository` field as a web address, from `o/r`, `github:o/r` or a git URL. */
 export function repositoryUrl(
@@ -93,6 +110,26 @@ function defined(options: FolioOptions = {}): FolioOptions {
 export interface Detected {
   /** The repository's default branch. */
   branch?: string;
+  /** The repository's web address, from its `origin` remote or CI. */
+  repository?: string;
+  /** The docs folder's path inside the repository; `""` at its root. */
+  docsPath?: string;
+}
+
+/** A docs file's page on the repository host: `blob` shows it, `edit` edits it. */
+export function repositoryFileUrl(
+  options: Pick<ResolvedOptions, "repository" | "branch" | "docsPath">,
+  view: "blob" | "edit",
+  file: string,
+): string | undefined {
+  if (!options.repository) return undefined;
+  const path = [options.docsPath, file].filter(Boolean).join("/");
+  return `${options.repository}/${view}/${options.branch}/${path}`;
+}
+
+/** A published package's npm name; a private or unnamed one has none. */
+function npmName(pkg: PackageInfo): string | undefined {
+  return pkg.private || !pkg.name ? undefined : pkg.name;
 }
 
 /**
@@ -104,18 +141,19 @@ export function resolveOptions(
   pkg: PackageInfo = {},
   detected: Detected = {},
 ): ResolvedOptions {
+  const { npm, ...given } = { ...defined(pkg.folio), ...defined(options) };
   return {
     title: pkg.name?.replace(/^@[^/]+\//, "") ?? "Docs",
     version: pkg.version,
     description: pkg.description ?? "",
-    repository: repositoryUrl(pkg.repository),
+    repository: repositoryUrl(pkg.repository) ?? detected.repository,
     url: siteUrl(pkg.homepage),
     docs: "docs",
     branch: detected.branch ?? "master",
-    docsPath: "docs",
+    docsPath: detected.docsPath ?? "docs",
     nav: [],
     footer: "",
-    ...defined(pkg.folio),
-    ...defined(options),
+    ...given,
+    npm: npm === false ? undefined : (npm ?? npmName(pkg)),
   };
 }
