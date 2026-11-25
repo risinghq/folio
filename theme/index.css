@@ -1,3 +1,4 @@
+@import "./fonts.css";
 @import "./tokens.css";
 @import "./base.css";
 @import "./controls.css";
@@ -10,3 +11,4 @@
 @import "./components/pager.css";
 @import "./components/footer.css";
 @import "./components/not-found.css";
+@import "./components/home.css";
