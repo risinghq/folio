@@ -1,6 +1,3 @@
-import "@fontsource-variable/geist";
-import "@fontsource-variable/geist-mono";
-import "../../theme/index.css";
 import { render } from "@solidjs/web";
 import { createComponent, type Component } from "solid-js";
 
