@@ -8,15 +8,35 @@ export interface Routes {
   page: (slug: string) => string;
   /** A file of the docs folder, such as an image. */
   file: (path: string) => string;
+  /** A page's social card, or the home page's with no slug. */
+  card: (slug?: string) => string;
+  /** A path as a full URL, or none when the site's address is unknown. */
+  absolute: (path: string) => string | undefined;
 }
 
-export function routesFor(base: string): Routes {
+export function routesFor(base: string, url?: string): Routes {
   const root = base.endsWith("/") ? base : `${base}/`;
   return {
     home: root,
     page: (slug) => `${root}docs/${slug}`,
     file: (path) => `${root}docs/${path}`,
+    card: (slug) =>
+      slug ? `${root}og/docs/${slug}.png` : `${root}og/index.png`,
+    absolute: (path) => (url ? new URL(path, url).href : undefined),
   };
+}
+
+/** The image a page shares, as a full URL, or none. */
+function shareImage(
+  options: ResolvedOptions,
+  routes: Routes,
+  slug?: string,
+): string | undefined {
+  const image = options.ogImage;
+  if (image === false) return undefined;
+  if (image === undefined) return routes.absolute(routes.card(slug));
+  if (/^https?:\/\//.test(image)) return image;
+  return routes.absolute(`${routes.home}${image.replace(/^\//, "")}`);
 }
 
 /** What a built page links to: Vite's script and style tags for the client entry. */
@@ -24,10 +44,41 @@ export interface Assets {
   head: string;
 }
 
+/** How a page presents itself to search engines and link previews. */
+interface Social {
+  site: string;
+  title: string;
+  url?: string;
+  image?: string;
+}
+
 interface Shell {
   title: string;
   description: string;
   body: string;
+  /** None marks a page search engines should not index. */
+  social?: Social;
+}
+
+function socialTags(shell: Shell): string {
+  const social = shell.social;
+  if (!social) return `<meta name="robots" content="noindex">`;
+  const property = (name: string, content: string | undefined) =>
+    content ? `<meta property="${name}" content="${escapeHtml(content)}">` : "";
+  return [
+    social.url ? `<link rel="canonical" href="${escapeHtml(social.url)}">` : "",
+    property("og:type", "website"),
+    property("og:site_name", social.site),
+    property("og:title", social.title),
+    property("og:description", shell.description),
+    property("og:url", social.url),
+    property("og:image", social.image),
+    social.image
+      ? `<meta name="twitter:card" content="summary_large_image">`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 /**
@@ -44,6 +95,7 @@ function document(shell: Shell, assets: Assets): string {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(shell.title)}</title>
 ${shell.description ? `<meta name="description" content="${escapeHtml(shell.description)}">` : ""}
+${socialTags(shell)}
 ${themeScript}
 ${assets.head}
 </head>
@@ -177,6 +229,12 @@ ${footer(options)}`;
       title: `${page.title} · ${options.title}`,
       description: page.summary,
       body,
+      social: {
+        site: options.title,
+        title: page.title,
+        url: routes.absolute(routes.page(slug)),
+        image: shareImage(options, routes, slug),
+      },
     },
     input.assets,
   );
@@ -207,6 +265,12 @@ ${footer(options)}`;
       title: options.title,
       description: options.description || home?.summary || "",
       body,
+      social: {
+        site: options.title,
+        title: options.title,
+        url: routes.absolute(routes.home),
+        image: shareImage(options, routes),
+      },
     },
     input.assets,
   );

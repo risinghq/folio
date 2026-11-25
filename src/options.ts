@@ -28,6 +28,16 @@ export interface FolioOptions {
   nav?: NavLink[];
   /** A footer line, as HTML. */
   footer?: string;
+  /**
+   * The site's public address, such as `https://example.com`. Enables the
+   * canonical link, absolute Open Graph URLs, social cards and the sitemap.
+   */
+  url?: string;
+  /**
+   * The social card every page shares: a URL, or a path under the site's base.
+   * Unset, folio draws one card per page. `false` shares none.
+   */
+  ogImage?: string | false;
 }
 
 /** The fields of the nearest `package.json` that supply defaults. */
@@ -35,12 +45,13 @@ export interface PackageInfo {
   name?: string;
   version?: string;
   description?: string;
+  homepage?: string;
   repository?: string | { url?: string };
   /** folio's options, for a site that has no Vite config of its own. */
   folio?: FolioOptions;
 }
 
-type Optional = "repository" | "islands" | "version";
+type Optional = "repository" | "islands" | "version" | "url" | "ogImage";
 
 export type ResolvedOptions = Required<Omit<FolioOptions, Optional>> &
   Pick<FolioOptions, Optional>;
@@ -59,6 +70,17 @@ export function repositoryUrl(
     .replace(/^ssh:\/\/git@/, "https://")
     .replace(/^git@([^:]+):/, "https://$1/")
     .replace(/\.git$/, "");
+}
+
+/**
+ * A `homepage` field as the site's address. `npm init` points `homepage` at
+ * the repository's README, which is not the site, so a GitHub address is none.
+ */
+export function siteUrl(homepage: string | undefined): string | undefined {
+  if (!homepage) return undefined;
+  const parsed = URL.parse(homepage);
+  if (!parsed || parsed.hostname === "github.com") return undefined;
+  return homepage;
 }
 
 function defined(options: FolioOptions = {}): FolioOptions {
@@ -80,6 +102,7 @@ export function resolveOptions(
     version: pkg.version,
     description: pkg.description ?? "",
     repository: repositoryUrl(pkg.repository),
+    url: siteUrl(pkg.homepage),
     docs: "docs",
     branch: "master",
     docsPath: "docs",

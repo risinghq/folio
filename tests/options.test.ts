@@ -47,3 +47,26 @@ describe("resolveOptions", () => {
     });
   });
 });
+
+describe("the site's address", () => {
+  it("comes from homepage", () => {
+    const options = resolveOptions({}, { homepage: "https://thing.dev" });
+    expect(options.url).toBe("https://thing.dev");
+  });
+
+  it.each([
+    ["the README npm init points at", "https://github.com/o/thing#readme"],
+    ["an unparsable value", "thing.dev"],
+    ["an empty value", ""],
+  ])("is unknown from %s", (_, homepage) => {
+    expect(resolveOptions({}, { homepage }).url).toBeUndefined();
+  });
+
+  it("prefers the url option", () => {
+    const options = resolveOptions(
+      { url: "https://docs.thing.dev" },
+      { homepage: "https://thing.dev" },
+    );
+    expect(options.url).toBe("https://docs.thing.dev");
+  });
+});
