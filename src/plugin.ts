@@ -1,3 +1,4 @@
+import { createRequire } from "node:module";
 import { isAbsolute, join, resolve } from "node:path";
 
 import type { Plugin, ResolvedConfig, ViteDevServer } from "vite";
@@ -18,13 +19,16 @@ import { loadSite, type Site } from "./site.ts";
 
 const entryId = "virtual:folio/entry";
 const resolvedEntryId = `\0${entryId}`;
-function entryModule(root: string, options: ResolvedOptions): string {
+const require = createRequire(import.meta.url);
+export function entryModule(root: string, options: ResolvedOptions): string {
   const islands = options.islands
     ? `import islands from ${JSON.stringify(isAbsolute(options.islands) ? options.islands : resolve(root, options.islands))};`
     : "const islands = {};";
+  const font = (name: string) =>
+    `import ${JSON.stringify(require.resolve(name))};`;
   return [
-    `import "@fontsource-variable/geist";`,
-    `import "@fontsource-variable/geist-mono";`,
+    font("@fontsource-variable/geist"),
+    font("@fontsource-variable/geist-mono"),
     `import "@risinghq/folio/theme.css";`,
     `import { start } from "@risinghq/folio/client";`,
     islands,
