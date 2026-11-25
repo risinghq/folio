@@ -1,6 +1,7 @@
 # Getting started
 
-Run three commands in a package's folder:
+Add a manual to a package and serve it locally with three commands, run in the
+package's folder:
 
 ```sh
 bun add -d https://github.com/risinghq/folio/releases/latest/download/folio.tgz
