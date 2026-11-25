@@ -1,0 +1,49 @@
+{
+  "name": "@risinghq/folio",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A documentation site from a repository's docs folder, built with Vite and Solid.",
+  "license": "MIT",
+  "files": [
+    "src",
+    "theme"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client/index.ts",
+    "./highlight": "./src/highlight.ts",
+    "./theme.css": "./theme/theme.css"
+  },
+  "scripts": {
+    "check": "bun run lint && bun run typecheck && bun run test",
+    "fix": "oxlint --fix && oxfmt",
+    "lint": "oxlint --deny-warnings && oxfmt --check",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
+    "@shikijs/langs": "^4.6.0",
+    "marked": "^18.2.0",
+    "shiki": "^4.6.0"
+  },
+  "devDependencies": {
+    "@solidjs/web": "^2.0.0-rc.21",
+    "@types/node": "^26.6.7",
+    "jsdom": "^31.0.1",
+    "oxfmt": "^0.78.0",
+    "oxlint": "^1.93.0",
+    "playwright": "^1.65.0",
+    "solid-js": "^2.0.0-rc.21",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
+  },
+  "peerDependencies": {
+    "@solidjs/web": "^2.0.0-rc.21",
+    "solid-js": "^2.0.0-rc.21",
+    "vite": "^8.3.8"
+  }
+}
