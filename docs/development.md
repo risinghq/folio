@@ -26,9 +26,16 @@ it to folio.rising.sh on a push to `master`.
 
 1. Set `version` in `package.json`.
 2. Start `.github/release-notes.md` with `folio X.Y.Z is out.`
-3. Update the install URL in `README.md` and `docs/getting-started.md`.
-4. Merge, then push the tag `vX.Y.Z`.
+3. Merge, then push the tag `vX.Y.Z`.
 
 The release workflow refuses a tag that does not match `package.json`. It checks
-the package, packs it, installs the tarball in an empty project, and attaches
-the tarball to the tag's GitHub release.
+the package and packs it. It installs the tarball in an empty project, runs
+`folio init` and builds the starter site. Then it attaches the tarball to the
+tag's GitHub release twice: under its `npm pack` name and as `folio.tgz`, the
+name the `releases/latest` install URL uses.
+
+## The screenshot
+
+`docs/images/screenshot.png` is the Write the manual page of this site, in the
+light theme, at 1280 by 800 CSS pixels and a device scale of 2. Retake it when
+the theme changes.

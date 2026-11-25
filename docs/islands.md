@@ -13,14 +13,14 @@ This one is live:
 
 ## The islands module
 
-The `islands` option names a module, relative to the Vite root. Its default
+The `islands` option names a module, relative to the Vite root; with the `folio`
+commands that is the package's folder, so `"docs/islands.ts"` works. Its default
 export maps each island name to a loader of the component's module:
 
 ```ts
 // src/islands.ts
 export default {
   counter: () => import("./counter.ts"),
-  landing: () => import("./landing.ts"),
 };
 ```
 
@@ -33,12 +33,6 @@ islands it places.
 An island mounts when it comes within 400 px of the viewport. A name the islands
 module does not export logs an error in the browser console and leaves the page
 as it is.
-
-## The landing island
-
-The `landing` option names the island the home page mounts. It mounts at once,
-not on scroll, as the page's main content. Without `landing`, the home page
-shows the title and a link to the first page.
 
 ## Controls
 
