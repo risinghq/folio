@@ -1,23 +1,24 @@
-folio 0.1.0 is out.
+folio 0.1.1 is out.
 
-This is the first release. folio builds a documentation site from a repository's
-`docs/` folder: a Vite plugin renders each manual page as static HTML, mounts
-Solid islands for live demos and serves an optional landing island at `/`.
+This patch release follows 0.1.0 by a day. It fixes one packaging defect.
 
-Install it from this release's tarball:
+A site that installed folio with bun could not build: the generated client entry
+imported `@fontsource-variable/geist` and `@fontsource-variable/geist-mono` as
+bare package names, which Vite resolves from the site's root, and bun does not
+hoist a dependency's dependencies there. The plugin now resolves each font's
+stylesheet from folio's own install and puts the absolute path in the entry, so
+the fonts stay folio's dependencies.
+
+## Upgrade
+
+Install the new tarball over the old one:
 
 ```
-bun add @risinghq/folio@https://github.com/risinghq/folio/releases/download/v0.1.0/risinghq-folio-0.1.0.tgz
+bun add @risinghq/folio@https://github.com/risinghq/folio/releases/download/v0.1.1/risinghq-folio-0.1.1.tgz
 ```
 
-Then add the `folio` plugin to the site's Vite config. The readme covers the
-options, the `<!-- island NAME -->` marker and the routes the build emits.
+A site that added the two `@fontsource-variable` packages to its own
+`package.json` as a workaround can remove them.
 
-There is no npm publish yet; the release asset is the only install path. Report
-problems on the issue tracker.
-
-The changes: the plugin builds every route as static HTML (`index.html`,
-`404.html`, `docs/<slug>.html` and `docs/<slug>/index.html` per page), the theme
-numbers the manual's pages and folds its contents into the page on narrow
-screens, and islands mount as they near the viewport. The rest is the readme, CI
-and this release workflow.
+No breaking changes and no known problems. The change list is the fix, its test
+and this version bump.
