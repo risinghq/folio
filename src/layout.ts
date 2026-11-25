@@ -6,11 +6,17 @@ import type { ResolvedOptions } from "./options.ts";
 export interface Routes {
   home: string;
   page: (slug: string) => string;
+  /** A file of the docs folder, such as an image. */
+  file: (path: string) => string;
 }
 
 export function routesFor(base: string): Routes {
   const root = base.endsWith("/") ? base : `${base}/`;
-  return { home: root, page: (slug) => `${root}docs/${slug}` };
+  return {
+    home: root,
+    page: (slug) => `${root}docs/${slug}`,
+    file: (path) => `${root}docs/${path}`,
+  };
 }
 
 /** What a built page links to: Vite's script and style tags for the client entry. */
@@ -183,18 +189,25 @@ export interface HomePageInput {
   assets: Assets;
 }
 
-/** The home page: the landing island in the site's shell, or a link to the manual. */
-export function homePage(input: HomePageInput): string {
-  const { options, routes, pages } = input;
+/** The home page: the docs folder's `index.md`, or a link to the manual. */
+export function homePage(
+  input: HomePageInput & { home?: RenderedPage },
+): string {
+  const { options, routes, pages, home } = input;
   const first = routes.page(pages[0]?.slug ?? "");
-  const main = options.landing
-    ? `<main id="content" class="island landing-root" data-island="${escapeHtml(options.landing)}" data-eager></main>`
+  const main = home
+    ? `<main id="content" class="home"><h1>${escapeHtml(home.title || options.title)}</h1><div class="prose">
+${home.html}</div></main>`
     : `<main id="content" class="not-found"><h1>${escapeHtml(options.title)}</h1><p><a href="${first}">Read the manual</a></p></main>`;
   const body = `${header(options, routes, pages, false)}
 ${main}
 ${footer(options)}`;
   return document(
-    { title: options.title, description: options.description, body },
+    {
+      title: options.title,
+      description: options.description || home?.summary || "",
+      body,
+    },
     input.assets,
   );
 }

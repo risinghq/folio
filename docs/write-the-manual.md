@@ -27,6 +27,37 @@ Every `##` and `###` heading gets an anchor and an entry in the page's table of
 contents. On a wide screen the contents sit in a right rail; on a narrow one
 they fold into the top of the page.
 
+## The home page
+
+`docs/index.md` is the page at `/`. It has no sidebar. Its `#` heading is the
+large title, and a paragraph that holds only links becomes a row of buttons, the
+first one filled:
+
+```md
+# my-package
+
+What my-package does, in one line.
+
+[Get started](getting-started.md) [GitHub](https://github.com/o/my-package)
+```
+
+Without `index.md`, the home page shows the title and a link to the first page.
+Leave `index.md` out of `README.md`'s list.
+
+## Images
+
+An image whose path is inside the docs folder is served with the site:
+
+```md
+![The settings panel](images/settings.png)
+```
+
+The path is relative to the docs folder and ends in `.png`, `.jpg`, `.jpeg`,
+`.gif`, `.svg`, `.webp` or `.avif`. The build copies only the images a page
+shows, and fails when one is missing. Each `<img>` carries the file's width and
+height, so the page does not move when it loads. An image with an `http` or
+`https` address stays as written.
+
 ## Links
 
 A link to another page, `[Islands](islands.md)`, becomes that page's route and

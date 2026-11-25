@@ -1,0 +1,14 @@
+/* The home page: the docs folder's `index.md`. */
+
+.home {
+  max-width: 720px;
+  margin: 96px auto;
+  padding: 0 24px;
+}
+.home h1 {
+  margin: 0 0 16px;
+  font: 600 clamp(32px, 6vw, 48px) / 1.1 var(--font);
+  letter-spacing: -0.02em;
+  color: var(--text);
+  text-wrap: balance;
+}

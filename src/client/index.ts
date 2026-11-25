@@ -108,7 +108,7 @@ async function mount(el: HTMLElement, islands: Islands): Promise<void> {
   el.dataset.mounted = "";
 }
 
-/** Mounts eager islands now and the rest as they near the viewport. */
+/** Mounts each island as it nears the viewport. */
 function setupIslands(islands: Islands): void {
   const observer = new IntersectionObserver(
     (entries) => {
@@ -121,8 +121,7 @@ function setupIslands(islands: Islands): void {
     { rootMargin: "400px 0px" },
   );
   for (const el of document.querySelectorAll<HTMLElement>("[data-island]")) {
-    if ("eager" in el.dataset) void mount(el, islands);
-    else observer.observe(el);
+    observer.observe(el);
   }
 }
 
