@@ -6,8 +6,10 @@
  */
 
 /*
- * One accent at hue 40. Every neutral sits on hue 65, so the neutrals read
- * warm and the accent reads as a colour, not a signal. Faint is still text
+ * Every neutral sits on hue 65, so the neutrals read warm and the accent reads
+ * as a colour, not a signal. The accent is amber (hue 55) on dark and hue 40
+ * on light: at the lightness light text needs, hue 55 cannot hold enough
+ * chroma in sRGB and turns brown. Faint is still text
  * (TOC links, labels, captions), so it keeps 4.5:1 on every surface.
  */
 :root {
@@ -22,15 +24,15 @@
   --text-body: oklch(0.86 0.008 65);
   --muted: oklch(0.77 0.01 65);
   --faint: oklch(0.66 0.01 65);
-  --accent: oklch(0.7 0.19 40);
+  --accent: oklch(0.74 0.15 55);
   --scrim: oklch(0 0 0 / 0.5);
 
   --code-fg: oklch(0.88 0.008 65);
   --code-comment: oklch(0.63 0.01 65);
   --code-punct: oklch(0.74 0.01 65);
-  --code-keyword: oklch(0.76 0.145 40);
+  --code-keyword: oklch(0.78 0.14 55);
   --code-string: oklch(0.8 0.1 150);
-  --code-number: oklch(0.82 0.12 75);
+  --code-number: oklch(0.86 0.12 95);
   --code-fn: oklch(0.95 0.006 65);
   --code-tag: oklch(0.95 0.006 65);
   --code-attr: oklch(0.76 0.08 240);
