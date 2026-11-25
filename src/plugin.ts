@@ -111,6 +111,20 @@ function speculationRules(base: string): string {
   return `<script type="speculationrules">${JSON.stringify(rules)}</script>`;
 }
 
+const iconFile = "favicon.svg";
+
+/**
+ * The header's brand mark as the tab icon, in the theme's accent. A browser
+ * colors it by its own color scheme, since an icon cannot read the page's
+ * chosen theme.
+ */
+const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18"><style>rect{fill:oklch(0.74 0.15 55)}@media (prefers-color-scheme:light){rect{fill:oklch(0.57 0.178 40)}}</style><rect width="18" height="18" rx="5"/></svg>
+`;
+
+function iconLink(base: string): string {
+  return `<link rel="icon" href="${base}${iconFile}" type="image/svg+xml">`;
+}
+
 /**
  * Cloudflare and Netlify read `_headers`. Hashed assets never change, so a
  * browser keeps them instead of revalidating each one on every page.
@@ -204,12 +218,18 @@ export function folio(input: FolioOptions = {}): Plugin {
   let options: ResolvedOptions;
   let config: ResolvedConfig;
 
+  /** Whether the project's public folder has a file, which then replaces folio's. */
+  const own = (file: string) =>
+    Boolean(config.publicDir && existsSync(join(config.publicDir, file)));
+
   async function serve(
     server: ViteDevServer,
     url: string,
     accept: string | undefined,
   ): Promise<Response | null> {
     const path = decodeURIComponent(url.split(/[?#]/)[0] ?? "");
+    if (path === `${config.base}${iconFile}` && !own(iconFile))
+      return { status: 200, type: "image/svg+xml", body: icon };
     const negotiated = prefersMarkdown(accept)
       ? markdownPath(path, config.base)
       : undefined;
@@ -238,9 +258,12 @@ export function folio(input: FolioOptions = {}): Plugin {
         body: await readFile(join(config.root, options.docs, route.path)),
       };
     }
-    // transformIndexHtml adds the base to this path.
+    // transformIndexHtml adds the base to these paths.
     const assets = {
-      head: `<script type="module" src="/@id/${entryId}"></script>`,
+      head: [
+        iconLink("/"),
+        `<script type="module" src="/@id/${entryId}"></script>`,
+      ].join("\n"),
     };
     const { status, html } = renderRoute(
       route,
@@ -308,6 +331,7 @@ export function folio(input: FolioOptions = {}): Plugin {
         throw new Error("folio: the client entry was not built");
       const css = [...(entry.viteMetadata?.importedCss ?? [])];
       const head = [
+        iconLink(config.base),
         ...fontPreloads(bundle, config.base),
         ...css.map(
           (file) => `<link rel="stylesheet" href="${config.base}${file}">`,
@@ -319,8 +343,7 @@ export function folio(input: FolioOptions = {}): Plugin {
       const site = await loadSite(config.root, options, routes);
       const emit = (fileName: string, source: string | Uint8Array) =>
         this.emitFile({ type: "asset", fileName, source });
-      const own = (file: string) =>
-        Boolean(config.publicDir && existsSync(join(config.publicDir, file)));
+      if (!own(iconFile)) emit(iconFile, icon);
       if (options.url) {
         if (!own("sitemap.xml")) emit("sitemap.xml", sitemap(routes, site));
         // Crawlers read robots.txt only at the host's root.

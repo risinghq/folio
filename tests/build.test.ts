@@ -1,4 +1,10 @@
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import {
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -96,6 +102,46 @@ describe("build", () => {
     const preload = html.indexOf('rel="preload"');
     expect(preload).toBeLessThan(html.indexOf('rel="stylesheet"'));
   });
+
+  it("gives every page the brand mark as its tab icon, in the theme's accents", () => {
+    for (const page of ["index.html", "404.html", "docs/getting-started.html"])
+      expect(read(page)).toContain(
+        '<link rel="icon" href="/site/favicon.svg" type="image/svg+xml">',
+      );
+    const tokens = readFileSync(
+      fileURLToPath(new URL("../theme/tokens.css", import.meta.url)),
+      "utf8",
+    );
+    const accents = [...tokens.matchAll(/--accent: (oklch\([^)]+\))/g)].map(
+      (match) => match[1],
+    );
+    const fills = [
+      ...read("favicon.svg").matchAll(/fill:(oklch\([^)]+\))/g),
+    ].map((match) => match[1]);
+    expect(fills).toEqual(accents);
+  });
+
+  it("keeps a tab icon the project ships", async () => {
+    const publicDir = mkdtempSync(join(tmpdir(), "folio-public-"));
+    const ownOut = mkdtempSync(join(tmpdir(), "folio-own-"));
+    writeFileSync(join(publicDir, "favicon.svg"), "<svg>own</svg>");
+    try {
+      await build({
+        root,
+        configFile: false,
+        publicDir,
+        logLevel: "silent",
+        build: { outDir: ownOut, emptyOutDir: true },
+        plugins: [folio({ title: "Fixture" })],
+      });
+      expect(readFileSync(join(ownOut, "favicon.svg"), "utf8")).toBe(
+        "<svg>own</svg>",
+      );
+    } finally {
+      rmSync(publicDir, { recursive: true, force: true });
+      rmSync(ownOut, { recursive: true, force: true });
+    }
+  }, 60_000);
 
   it("caches every hashed asset for a year and no page", () => {
     const [pattern, header] = read("_headers").trim().split(/\n\s+/);
