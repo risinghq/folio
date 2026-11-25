@@ -78,7 +78,7 @@ describe("Markdown for agents", () => {
     const links = targets(parse(read("docs/getting-started.md")).body);
     expect(links).toContain(`${site}docs/create-thing.md#options`);
     expect(links).toContain(
-      "https://github.com/o/r/blob/master/docs/changelog.md",
+      "https://github.com/o/r/blob/master/tests/fixture/docs/changelog.md",
     );
     const missing = links
       .map((link) => builtFile(link.replace(/#.*$/, "")))

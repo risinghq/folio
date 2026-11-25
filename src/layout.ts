@@ -5,7 +5,7 @@ import {
   trailingIsland,
   type RenderedPage,
 } from "./markdown.ts";
-import type { ResolvedOptions } from "./options.ts";
+import { repositoryFileUrl, type ResolvedOptions } from "./options.ts";
 
 /** The routes of one site, under Vite's `base`. */
 export interface Routes {
@@ -134,6 +134,9 @@ function header(
   const manual = `<a href="${routes.page(pages[0]?.slug ?? "")}"${inManual ? ' aria-current="true"' : ""}>Manual</a>`;
   const links = [
     ...options.nav,
+    ...(options.npm
+      ? [{ text: "npm", href: `https://www.npmjs.com/package/${options.npm}` }]
+      : []),
     ...(options.repository
       ? [{ text: "GitHub", href: options.repository }]
       : []),
@@ -219,8 +222,9 @@ export interface ManualPageInput {
 
 export function manualPage(input: ManualPageInput): string {
   const { options, routes, pages, slug, page } = input;
-  const edit = options.repository
-    ? `<a href="${escapeHtml(`${options.repository}/edit/${options.branch}/${options.docsPath}/${slug}.md`)}" rel="noreferrer">Edit this page on GitHub</a>`
+  const editUrl = repositoryFileUrl(options, "edit", `${slug}.md`);
+  const edit = editUrl
+    ? `<a href="${escapeHtml(editUrl)}" rel="noreferrer">Edit this page on GitHub</a>`
     : "";
   const index = pages.findIndex((entry) => entry.slug === slug);
   const number = pageNumber(index);

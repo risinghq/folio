@@ -58,7 +58,14 @@ describe("build", () => {
     expect(html).toContain('<a href="#options-1">Options</a>');
     expect(html).toContain('rel="next"');
     expect(html).toContain(
-      "https://github.com/o/r/edit/master/docs/getting-started.md",
+      "https://github.com/o/r/edit/master/tests/fixture/docs/getting-started.md",
+    );
+  });
+
+  it("links the header to the npm package the site documents", () => {
+    // The fixture has no package.json, so folio's own is the nearest.
+    expect(read("index.html")).toContain(
+      '<a href="https://www.npmjs.com/package/@risinghq/folio" rel="noreferrer">npm</a>',
     );
   });
 
