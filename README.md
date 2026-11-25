@@ -10,7 +10,7 @@ Each version tag publishes a GitHub release whose asset is the `npm pack`
 tarball. Install it by the asset's URL:
 
 ```sh
-bun add @risinghq/folio@https://github.com/risinghq/folio/releases/download/v0.1.0/risinghq-folio-0.1.0.tgz
+bun add @risinghq/folio@https://github.com/risinghq/folio/releases/download/v0.1.1/risinghq-folio-0.1.1.tgz
 ```
 
 ## Usage
