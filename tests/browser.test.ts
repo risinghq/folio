@@ -54,6 +54,22 @@ describe("the built site in a browser", () => {
     await expect(island.textContent()).resolves.toBe("counter mounted");
   });
 
+  // Chrome starts the prerender but stops it because DevTools is attached,
+  // so the test sees the attempt, not a prerendered page.
+  it("starts prerendering a page when its link is hovered", async () => {
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Preload.enable");
+    const attempted: string[] = [];
+    cdp.on("Preload.prerenderStatusUpdated", (event) =>
+      attempted.push(event.key.url),
+    );
+    await page.goto(`${url}docs/getting-started`);
+    expect(attempted).toEqual([]);
+    await page.locator(".sidebar a[href$='/docs/create-thing']").hover();
+    await expect.poll(() => attempted).toContain(`${url}docs/create-thing`);
+    await cdp.detach();
+  });
+
   it("keeps the chosen theme across a reload", async () => {
     await page.goto(`${url}docs/getting-started`);
     const before = await page.evaluate(

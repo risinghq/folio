@@ -25,6 +25,15 @@ function setupCopy(): void {
 
 function setupTheme(): void {
   const root = document.documentElement;
+  // A prerendered page read the theme on hover; the reader may have switched it since.
+  document.addEventListener("prerenderingchange", () => {
+    try {
+      const stored = localStorage.getItem(themeKey);
+      if (stored === "light" || stored === "dark") root.dataset.theme = stored;
+    } catch {
+      // Storage is off; keep the theme the page started with.
+    }
+  });
   for (const button of document.querySelectorAll<HTMLButtonElement>(
     ".theme-toggle",
   )) {
@@ -57,6 +66,24 @@ function setupMenu(): void {
   document.querySelector(".scrim")?.addEventListener("click", () => set(false));
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") set(false);
+  });
+}
+
+/** Prefetches a same-site page on hover where speculation rules do not prerender it. */
+function setupPrefetch(): void {
+  if (HTMLScriptElement.supports?.("speculationrules")) return;
+  const fetched = new Set([location.pathname]);
+  document.addEventListener("pointerover", (event) => {
+    const link = (event.target as Element).closest?.<HTMLAnchorElement>(
+      "a[href]",
+    );
+    if (!link || link.origin !== location.origin) return;
+    if (fetched.has(link.pathname)) return;
+    fetched.add(link.pathname);
+    const hint = document.createElement("link");
+    hint.rel = "prefetch";
+    hint.href = link.pathname;
+    document.head.append(hint);
   });
 }
 
@@ -129,6 +156,7 @@ export function start(islands: Islands): void {
   setupCopy();
   setupTheme();
   setupMenu();
+  setupPrefetch();
   setupScrollSpy();
   setupIslands(islands);
 }

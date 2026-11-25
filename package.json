@@ -1,6 +1,6 @@
 {
   "name": "@risinghq/folio",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A documentation site from a repository's docs folder, built with Vite and Solid.",
   "license": "MIT",
   "repository": "github:risinghq/folio",
@@ -40,7 +40,7 @@
     "deploy:site": "wrangler deploy -c site/wrangler.jsonc"
   },
   "dependencies": {
-    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/figtree": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
     "@shikijs/langs": "^4.6.0",
     "image-size": "^2.1.0",

@@ -91,9 +91,21 @@ describe("build", () => {
   it("preloads the text fonts before the stylesheet", () => {
     const html = read("index.html");
     expect(html).toMatch(
-      /<link rel="preload" href="\/site\/assets\/geist-latin-wght-normal-[\w-]+\.woff2" as="font" type="font\/woff2" crossorigin>/,
+      /<link rel="preload" href="\/site\/assets\/figtree-latin-wght-normal-[\w-]+\.woff2" as="font" type="font\/woff2" crossorigin>/,
     );
     const preload = html.indexOf('rel="preload"');
     expect(preload).toBeLessThan(html.indexOf('rel="stylesheet"'));
+  });
+
+  it("caches every hashed asset for a year and no page", () => {
+    const [pattern, header] = read("_headers").trim().split(/\n\s+/);
+    expect(header).toMatch(/max-age=31536000, immutable/);
+    const covers = (file: string) =>
+      `/site/${file}`.startsWith(pattern!.replace(/\*$/, ""));
+    const assets = readdirSync(join(outDir, "assets"));
+    expect(assets.length).toBeGreaterThan(0);
+    for (const file of assets) expect(covers(`assets/${file}`)).toBe(true);
+    for (const page of ["index.html", "docs/getting-started.html"])
+      expect(covers(page)).toBe(false);
   });
 });

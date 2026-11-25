@@ -1,16 +1,17 @@
 /*
- * Local faces scaled to Geist's metrics. Text set in them while Geist loads
- * takes the same space, so the swap does not move the page. The values come
- * from @capsizecss/metrics: size-adjust is the ratio of average character
- * widths, and each override is Geist's metric divided by it. Liberation Sans
- * and Liberation Mono share Arial's and Courier New's metrics.
+ * Local faces scaled to Figtree's and Geist Mono's metrics. Text set in them
+ * while the web fonts load takes the same space, so the swap does not move the
+ * page. The values come from @capsizecss/metrics: size-adjust is the ratio of
+ * average character widths, and each override is the web font's metric divided
+ * by it. Liberation Sans and Liberation Mono share Arial's and Courier New's
+ * metrics.
  */
 @font-face {
-  font-family: "Geist Fallback";
+  font-family: "Figtree Fallback";
   src: local("Arial"), local("ArialMT"), local("Liberation Sans");
-  size-adjust: 104.76%;
-  ascent-override: 95.93%;
-  descent-override: 28.16%;
+  size-adjust: 100.72%;
+  ascent-override: 94.32%;
+  descent-override: 24.82%;
   line-gap-override: 0%;
 }
 @font-face {

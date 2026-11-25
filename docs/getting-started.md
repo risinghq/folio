@@ -34,7 +34,7 @@ The site's title, version, description and GitHub link come from `package.json`.
 `releases/latest` installs the newest release. To pin one, name its tag:
 
 ```sh
-bun add -d https://github.com/risinghq/folio/releases/download/v0.2.0/folio.tgz
+bun add -d https://github.com/risinghq/folio/releases/download/v0.2.1/folio.tgz
 ```
 
 The [releases page](https://github.com/risinghq/folio/releases) lists every
