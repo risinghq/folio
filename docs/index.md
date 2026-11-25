@@ -4,7 +4,7 @@ folio turns a repository's `docs/` folder into a static site. Each markdown page
 becomes HTML, and a page can mount a live Solid component where it needs a demo.
 
 ```sh
-bun add -d https://github.com/risinghq/folio/releases/latest/download/folio.tgz
+bun add -d @risinghq/folio
 bunx folio init
 bun run docs:dev
 ```

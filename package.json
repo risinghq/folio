@@ -4,9 +4,12 @@
   "description": "A documentation site from a repository's docs folder, built with Vite and Solid.",
   "homepage": "https://folio.rising.sh",
   "license": "MIT",
-  "repository": "github:risinghq/folio",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/risinghq/folio.git"
+  },
   "bin": {
-    "folio": "./dist/cli.js"
+    "folio": "dist/cli.js"
   },
   "files": [
     "dist",

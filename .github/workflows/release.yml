@@ -60,20 +60,17 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      # folio.tgz keeps one name across versions, so releases/latest/download/folio.tgz
-      # is the install URL the manual gives.
       - name: Pack the tarball
         run: |
           mkdir "$RUNNER_TEMP/package"
           npm pack --pack-destination "$RUNNER_TEMP/package"
-          cp "$RUNNER_TEMP"/package/*.tgz "$RUNNER_TEMP/package/folio.tgz"
 
       - name: Tarball installs, exports the API and builds a starter site
         run: |
           mkdir "$RUNNER_TEMP/consumer"
           cd "$RUNNER_TEMP/consumer"
           npm init -y > /dev/null
-          npm install -D "$RUNNER_TEMP/package/folio.tgz"
+          npm install -D "$RUNNER_TEMP"/package/*.tgz
           node --input-type=module -e '
             const { folio } = await import("@risinghq/folio");
             const { start } = await import("@risinghq/folio/client");
@@ -92,8 +89,42 @@ jobs:
           path: ${{ runner.temp }}/package/*.tgz
           if-no-files-found: error
 
-  github:
+  npm:
     needs: [verify, tag, package]
+    runs-on: ubuntu-latest
+    if: ${{ startsWith(github.ref, 'refs/tags/') }}
+
+    # npm trusted publishing: the registry accepts this workflow's OIDC token
+    # in place of a stored npm token, and signs provenance for the tarball.
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: jdx/mise-action@924e7c586e33d7d4bae9c14e26c5d22e2beb6e78 # v5.3.0
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: package
+          path: ${{ runner.temp }}/package
+
+      # The first version is published by hand, since npm trusts a workflow
+      # only for a package that exists; its tag then skips this step.
+      - name: Publish to npm
+        run: |
+          version=$(jq -r .version package.json)
+          if npm view "@risinghq/folio@$version" version > /dev/null 2>&1; then
+            echo "@risinghq/folio@$version is already on npm"
+          else
+            npm publish "$RUNNER_TEMP"/package/*.tgz --access public
+          fi
+
+  github:
+    needs: [npm]
     runs-on: ubuntu-latest
     if: ${{ startsWith(github.ref, 'refs/tags/') }}
 

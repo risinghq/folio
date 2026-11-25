@@ -10,7 +10,7 @@ demo. Its own manual is built with it:
 ## Install
 
 ```sh
-bun add -d https://github.com/risinghq/folio/releases/latest/download/folio.tgz
+bun add -d @risinghq/folio
 ```
 
 ## Example
