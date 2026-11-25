@@ -96,6 +96,25 @@ function fontPreloads(bundle: Rolldown.OutputBundle, base: string): string[] {
     );
 }
 
+/**
+ * Prerenders a page of the site when the reader hovers or presses its link,
+ * so the click shows it at once. Browsers without speculation rules ignore it.
+ */
+function speculationRules(base: string): string {
+  const rules = {
+    prerender: [{ where: { href_matches: `${base}*` }, eagerness: "moderate" }],
+  };
+  return `<script type="speculationrules">${JSON.stringify(rules)}</script>`;
+}
+
+/**
+ * Cloudflare and Netlify read `_headers`. Hashed assets never change, so a
+ * browser keeps them instead of revalidating each one on every page.
+ */
+function cacheHeaders(base: string, assetsDir: string): string {
+  return `${base}${assetsDir}/*\n  Cache-Control: public, max-age=31536000, immutable\n`;
+}
+
 function renderRoute(
   route: Route,
   site: Site,
@@ -218,6 +237,7 @@ export function folio(input: FolioOptions = {}): Plugin {
           (file) => `<link rel="stylesheet" href="${config.base}${file}">`,
         ),
         `<script type="module" src="${config.base}${entry.fileName}"></script>`,
+        speculationRules(config.base),
       ].join("\n");
       const site = await loadSite(config.root, options, routesFor(config.base));
       const emit = (fileName: string, source: string | Uint8Array) =>
@@ -228,6 +248,11 @@ export function folio(input: FolioOptions = {}): Plugin {
         ),
       );
       site.files.forEach((file, i) => emit(`docs/${file}`, sources[i]!));
+      const ownHeaders =
+        config.publicDir && existsSync(join(config.publicDir, "_headers"));
+      if (config.base.startsWith("/") && !ownHeaders) {
+        emit("_headers", cacheHeaders(config.base, config.build.assetsDir));
+      }
       const assets = { head };
       emit(
         "index.html",
