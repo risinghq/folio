@@ -41,6 +41,10 @@ What my-package does, in one line.
 [Get started](getting-started.md) [GitHub](https://github.com/o/my-package)
 ```
 
+An [island](islands.md) on the last line of `index.md` stands beside the text on
+a wide screen and under it on a narrow one: a place for the project's showcase
+demo.
+
 Without `index.md`, the home page shows the title and a link to the first page.
 Leave `index.md` out of `README.md`'s list.
 

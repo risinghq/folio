@@ -30,9 +30,19 @@ islands it places.
 
 ## When an island mounts
 
-An island mounts when it comes within 400 px of the viewport. A name the islands
-module does not export logs an error in the browser console and leaves the page
-as it is.
+An island mounts when it comes within 400 px of the viewport.
+
+`vite build` fails on a page that places a name the islands module does not
+export, and names the page and the island. It reads the names from the default
+export: an object literal, or a constant bound to one. When a spread or a
+computed key hides the names, the check passes, and the browser logs the error
+instead.
+
+## Styles
+
+The article's styles stop at an island: its headings, lists, links and code
+blocks look the way the island's own CSS makes them. Inherited properties, such
+as the text color and font, still reach it.
 
 ## Controls
 

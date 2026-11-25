@@ -31,7 +31,9 @@ async function buildSite(options: FolioOptions, base = "/") {
     configFile: false,
     logLevel: "silent",
     build: { outDir, emptyOutDir: true },
-    plugins: [folio({ title: "Fixture", ...options })],
+    plugins: [
+      folio({ title: "Fixture", islands: "src/islands.ts", ...options }),
+    ],
   });
   return outDir;
 }

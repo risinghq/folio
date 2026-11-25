@@ -12,3 +12,28 @@
   color: var(--text);
   text-wrap: balance;
 }
+
+/* An island that ends `index.md` stands beside the text on a wide screen. */
+.home-split {
+  max-width: 1200px;
+  margin-block: 64px;
+}
+.home-split > .island {
+  margin-top: 40px;
+}
+/* The text column is narrow: code wraps instead of scrolling. */
+.home-text .code pre {
+  white-space: pre-wrap;
+}
+@media (min-width: 961px) {
+  .home-split {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    column-gap: clamp(32px, 5vw, 80px);
+    align-items: center;
+    min-height: calc(100svh - var(--header) - 128px);
+  }
+  .home-split > .island {
+    margin-top: 0;
+  }
+}

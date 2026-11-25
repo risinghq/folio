@@ -42,8 +42,10 @@ function setupCopy(): void {
       return;
     }
     const button = target.closest<HTMLButtonElement>("figure.code .copy");
-    const code = button?.closest("figure")?.querySelector("pre")?.textContent;
-    if (!button || code == null) return;
+    // An island's own `figure.code .copy` is the island's to handle.
+    if (!button || button.closest(".island")) return;
+    const code = button.closest("figure")?.querySelector("pre")?.textContent;
+    if (code == null) return;
     void copy(button, code);
   });
 }
