@@ -83,4 +83,17 @@ describe("the built site in a browser", () => {
     expect(after).not.toBe(before);
     expect(["light", "dark"]).toContain(after);
   });
+
+  it("copies the page's markdown to the clipboard", async () => {
+    await page
+      .context()
+      .grantPermissions(["clipboard-read", "clipboard-write"], { origin: url });
+    await page.goto(`${url}docs/getting-started`);
+    const button = page.locator(".copy-page");
+    await button.click();
+    await expect.poll(() => button.textContent()).toBe("Copied");
+    const copied = await page.evaluate(() => navigator.clipboard.readText());
+    const served = await (await fetch(`${url}docs/getting-started.md`)).text();
+    expect(copied).toBe(served);
+  });
 });

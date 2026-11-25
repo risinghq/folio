@@ -10,6 +10,12 @@ export interface Routes {
   file: (path: string) => string;
   /** A page's social card, or the home page's with no slug. */
   card: (slug?: string) => string;
+  /** A page's Markdown file for agents, or the home page's with no slug. */
+  markdown: (slug?: string) => string;
+  /** The index of the manual for agents, `llms.txt`. */
+  llms: string;
+  /** Every page of the manual in one file, `llms-full.txt`. */
+  llmsFull: string;
   /** A path as a full URL, or none when the site's address is unknown. */
   absolute: (path: string) => string | undefined;
 }
@@ -22,6 +28,9 @@ export function routesFor(base: string, url?: string): Routes {
     file: (path) => `${root}docs/${path}`,
     card: (slug) =>
       slug ? `${root}og/docs/${slug}.png` : `${root}og/index.png`,
+    markdown: (slug) => (slug ? `${root}docs/${slug}.md` : `${root}index.md`),
+    llms: `${root}llms.txt`,
+    llmsFull: `${root}llms-full.txt`,
     absolute: (path) => (url ? new URL(path, url).href : undefined),
   };
 }
@@ -56,6 +65,8 @@ interface Shell {
   title: string;
   description: string;
   body: string;
+  /** The page's Markdown for agents, when it has one. */
+  markdown?: string;
   /** None marks a page search engines should not index. */
   social?: Social;
 }
@@ -96,6 +107,7 @@ function document(shell: Shell, assets: Assets): string {
 <title>${escapeHtml(shell.title)}</title>
 ${shell.description ? `<meta name="description" content="${escapeHtml(shell.description)}">` : ""}
 ${socialTags(shell)}
+${shell.markdown ? `<link rel="alternate" type="text/markdown" href="${escapeHtml(shell.markdown)}">` : ""}
 ${themeScript}
 ${assets.head}
 </head>
@@ -208,6 +220,7 @@ export function manualPage(input: ManualPageInput): string {
   const index = pages.findIndex((entry) => entry.slug === slug);
   const number = pageNumber(index);
   const first = routes.page(pages[0]?.slug ?? "");
+  const markdown = routes.markdown(slug);
   const body = `${header(options, routes, pages, true)}
 <div class="menu-bar"><button class="menu-button" type="button" aria-controls="sidebar" aria-expanded="false"><span class="menu-icon" aria-hidden="true"></span>Manual</button><span class="menu-crumb">/ ${number} ${escapeHtml(page.title)}</span></div>
 <div class="doc-layout">
@@ -219,7 +232,7 @@ ${inlineToc(page)}
 <article class="prose">
 ${page.html}
 </article>
-<footer class="doc-footer">${pager(pages, index, routes)}${edit}</footer>
+<footer class="doc-footer">${pager(pages, index, routes)}<p class="doc-source"><button class="copy-page" type="button" data-markdown="${markdown}">Copy as Markdown</button><a href="${markdown}">View as Markdown</a>${edit}</p></footer>
 </main>
 ${rail(page)}
 </div>
@@ -229,6 +242,7 @@ ${footer(options)}`;
       title: `${page.title} · ${options.title}`,
       description: page.summary,
       body,
+      markdown,
       social: {
         site: options.title,
         title: page.title,
@@ -265,6 +279,7 @@ ${footer(options)}`;
       title: options.title,
       description: options.description || home?.summary || "",
       body,
+      markdown: home ? routes.markdown() : undefined,
       social: {
         site: options.title,
         title: options.title,

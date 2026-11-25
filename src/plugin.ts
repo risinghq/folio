@@ -5,6 +5,7 @@ import { dirname, extname, isAbsolute, join, resolve } from "node:path";
 
 import type { Plugin, ResolvedConfig, Rolldown, ViteDevServer } from "vite";
 
+import { agentFiles } from "./agents.ts";
 import {
   homePage,
   manualPage,
@@ -14,6 +15,7 @@ import {
   type Routes,
 } from "./layout.ts";
 import { docsFile, escapeHtml } from "./markdown.ts";
+import { markdownPath, prefersMarkdown } from "./negotiate.ts";
 import { renderCard } from "./og.ts";
 import {
   resolveOptions,
@@ -187,6 +189,17 @@ interface Response {
   body: string | Buffer;
 }
 
+const markdownType = "text/markdown; charset=utf-8";
+
+/** Whether a path under `base` can name one of the files for agents. */
+function agentPath(path: string, base: string): boolean {
+  const rest = path.slice(base.length);
+  return (
+    path.startsWith(base) &&
+    (rest.endsWith(".md") || rest === "llms.txt" || rest === "llms-full.txt")
+  );
+}
+
 export function folio(input: FolioOptions = {}): Plugin {
   let options: ResolvedOptions;
   let config: ResolvedConfig;
@@ -194,15 +207,29 @@ export function folio(input: FolioOptions = {}): Plugin {
   async function serve(
     server: ViteDevServer,
     url: string,
+    accept: string | undefined,
   ): Promise<Response | null> {
     const path = decodeURIComponent(url.split(/[?#]/)[0] ?? "");
+    const negotiated = prefersMarkdown(accept)
+      ? markdownPath(path, config.base)
+      : undefined;
+    const wanted = negotiated ?? (agentPath(path, config.base) ? path : null);
     const route = matchRoute(path, config.base);
+    if (!route && !wanted) return null;
+    const routes = routesFor(config.base, options.url);
+    const site = await loadSite(config.root, options, routes);
+    if (wanted) {
+      const file = agentFiles(site, options, routes).find(
+        (agent) => `${routes.home}${agent.path}` === wanted,
+      );
+      if (file) {
+        const type = file.path.endsWith(".md")
+          ? markdownType
+          : "text/plain; charset=utf-8";
+        return { status: 200, type, body: file.body };
+      }
+    }
     if (!route) return null;
-    const site = await loadSite(
-      config.root,
-      options,
-      routesFor(config.base, options.url),
-    );
     if (route.kind === "file") {
       if (!site.files.includes(route.path)) return null;
       return {
@@ -259,13 +286,14 @@ export function folio(input: FolioOptions = {}): Plugin {
         if (req.method !== "GET" || !req.url) return next();
         let response: Response | null;
         try {
-          response = await serve(server, req.url);
+          response = await serve(server, req.url, req.headers.accept);
         } catch (error) {
           return next(error);
         }
         if (!response) return next();
         res.statusCode = response.status;
         res.setHeader("Content-Type", response.type);
+        res.setHeader("Vary", "Accept");
         res.end(response.body);
       });
     },
@@ -316,6 +344,9 @@ export function folio(input: FolioOptions = {}): Plugin {
       site.files.forEach((file, i) => emit(`docs/${file}`, sources[i]!));
       if (config.base.startsWith("/") && !own("_headers")) {
         emit("_headers", cacheHeaders(config.base, config.build.assetsDir));
+      }
+      for (const file of agentFiles(site, options, routes)) {
+        if (!own(file.path)) emit(file.path, file.body);
       }
       const assets = { head };
       emit(

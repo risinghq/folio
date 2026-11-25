@@ -6,17 +6,42 @@ export type Islands = Record<string, () => Promise<{ default: Component }>>;
 
 const themeKey = "folio-theme";
 
-async function copy(button: HTMLButtonElement, code: string): Promise<void> {
-  await navigator.clipboard.writeText(code);
+async function copy(
+  button: HTMLButtonElement,
+  text: string | Promise<string>,
+): Promise<void> {
+  const label = button.textContent;
+  // Safari copies only inside the click, so the write starts before the text
+  // arrives and a ClipboardItem waits on it.
+  await (typeof text === "string"
+    ? navigator.clipboard.writeText(text)
+    : navigator.clipboard.write([
+        new ClipboardItem({
+          "text/plain": text.then(
+            (body) => new Blob([body], { type: "text/plain" }),
+          ),
+        }),
+      ]));
   button.textContent = "Copied";
-  setTimeout(() => (button.textContent = "Copy"), 1500);
+  setTimeout(() => (button.textContent = label), 1500);
+}
+
+async function fetchText(url: string): Promise<string> {
+  const response = await fetch(url);
+  if (!response.ok)
+    throw new Error(`folio: ${url} answered ${response.status}`);
+  return response.text();
 }
 
 function setupCopy(): void {
   document.addEventListener("click", (event) => {
-    const button = (event.target as Element).closest<HTMLButtonElement>(
-      "figure.code .copy",
-    );
+    const target = event.target as Element;
+    const page = target.closest<HTMLButtonElement>(".copy-page");
+    if (page?.dataset.markdown) {
+      void copy(page, fetchText(page.dataset.markdown));
+      return;
+    }
+    const button = target.closest<HTMLButtonElement>("figure.code .copy");
     const code = button?.closest("figure")?.querySelector("pre")?.textContent;
     if (!button || code == null) return;
     void copy(button, code);

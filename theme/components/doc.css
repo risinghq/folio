@@ -32,7 +32,22 @@
   font-size: 14px;
   color: var(--muted);
 }
-.doc-footer > a:hover {
+.doc-source {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 24px 0 0;
+}
+.copy-page {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.doc-source > a:hover,
+.copy-page:hover {
   color: var(--text);
 }
 
