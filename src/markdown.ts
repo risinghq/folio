@@ -1,4 +1,11 @@
-import { Marked, type Tokens } from "marked";
+import { posix } from "node:path";
+
+import {
+  Marked,
+  type Token,
+  type TokenizerAndRendererExtension,
+  type Tokens,
+} from "marked";
 
 import { highlight } from "./highlight.ts";
 import type { PageEntry } from "./manual.ts";
@@ -39,11 +46,125 @@ export interface RenderContext {
   imageSize?: (file: string) => { width: number; height: number };
   /** Renders a paragraph of nothing but links as a row of buttons. */
   actions?: boolean;
+  /** The slug of the page being rendered. Relative links resolve from its folder. */
+  slug?: string;
 }
 
 /** An image path inside the docs folder, such as `shots/home.png`. */
 export const docsFile =
   /^(?:\.\/)?((?:[\w-]+\/)*[\w-]+\.(?:png|jpe?g|gif|svg|webp|avif))$/;
+
+const external = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
+
+/** A relative path as seen from the docs folder, from the page `slug`. */
+function fromPage(path: string, slug = "index"): string {
+  return posix.join(posix.dirname(slug), path);
+}
+
+/** The docs folder image a page's image `href` shows, or none. */
+export function docsImage(href: string, slug?: string): string | undefined {
+  if (external.test(href) || href.startsWith("/")) return undefined;
+  return docsFile.exec(fromPage(href, slug))?.[1];
+}
+
+const frontmatterBlock = /^---\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
+
+function unquote(value: string): string {
+  if (/^".*"$/.test(value)) {
+    try {
+      return JSON.parse(value) as string;
+    } catch {
+      return value.slice(1, -1);
+    }
+  }
+  if (/^'.*'$/.test(value)) return value.slice(1, -1).replaceAll("''", "'");
+  return value;
+}
+
+/**
+ * A page's leading YAML frontmatter and the markdown after it. `fields`
+ * holds the top-level keys with a one-line value; nested and block values
+ * are left out.
+ */
+export function splitFrontmatter(source: string): {
+  fields: Record<string, string>;
+  body: string;
+} {
+  const match = frontmatterBlock.exec(source);
+  if (!match) return { fields: {}, body: source };
+  const fields: Record<string, string> = {};
+  for (const line of (match[1] ?? "").split(/\r?\n/)) {
+    const field = /^([A-Za-z][\w-]*):[ \t]+([^|>\s].*?)\s*$/.exec(line);
+    if (field) fields[field[1] ?? ""] = unquote(field[2] ?? "");
+  }
+  const body = source.slice(match[0].length).replace(/^(?:[ \t]*\r?\n)+/, "");
+  return { fields, body };
+}
+
+/** The callouts a `::: kind` container or a GitHub `> [!KIND]` alert makes, with their titles. */
+const calloutTitles: Record<string, string> = {
+  note: "Note",
+  info: "Info",
+  tip: "Tip",
+  important: "Important",
+  warning: "Warning",
+  caution: "Caution",
+  danger: "Danger",
+};
+
+/** A callout of `kind`. `label` is the title's HTML; without one the kind names it. */
+function callout(kind: string, label: string, inner: string): string {
+  const title = label || escapeHtml(calloutTitles[kind] ?? "");
+  if (kind === "details")
+    return `<details class="callout" data-kind="details"><summary>${title || "Details"}</summary>${inner}</details>\n`;
+  if (kind === "code-group") return `<div class="code-group">${inner}</div>\n`;
+  return `<div class="callout" data-kind="${kind}" role="note"><p class="callout-title">${title}</p>${inner}</div>\n`;
+}
+
+interface ContainerToken extends Tokens.Generic {
+  kind: string;
+  label: Token[];
+  tokens: Token[];
+}
+
+/**
+ * A VitePress container: `::: kind label`, its markdown, then `:::`. A
+ * container holding another opens and closes with a longer run of colons.
+ */
+const container: TokenizerAndRendererExtension = {
+  name: "container",
+  level: "block",
+  start: (src) => /^:{3,}/m.exec(src)?.index,
+  tokenizer(src) {
+    const match =
+      /^(:{3,})[ \t]*([a-z-]+)[ \t]*(.*)\n((?:[\s\S]*?\n)?)\1[ \t]*(?:\n+|$)/.exec(
+        src,
+      );
+    const kind = match?.[2] ?? "";
+    if (
+      !match ||
+      !(kind in calloutTitles || kind === "details" || kind === "code-group")
+    )
+      return undefined;
+    return {
+      type: "container",
+      raw: match[0],
+      kind,
+      label: this.lexer.inlineTokens((match[3] ?? "").trim()),
+      tokens: this.lexer.blockTokens(match[4] ?? ""),
+    };
+  },
+  renderer(token) {
+    const { kind, label, tokens } = token as ContainerToken;
+    return callout(
+      kind,
+      this.parser.parseInline(label),
+      this.parser.parse(tokens),
+    );
+  },
+};
+
+const alertMarker = /^\[!(note|tip|important|warning|caution)\][ \t]*(?:\n|$)/i;
 
 /** `<!-- island NAME -->` on its own line places a mounted component. */
 export const islandComment = /^<!--\s*island\s+([a-z0-9-]+)\s*-->\s*$/;
@@ -91,19 +212,30 @@ function plain(text: string): string {
 }
 
 /**
- * A link to another `.md` page becomes `pageUrl` of its slug; a link to a `.md`
+ * A link to a manual page becomes `pageUrl` of its slug; a link to a `.md`
  * file the manual does not list goes to `sourceUrl`. Any other link stays.
+ * A relative link resolves from the page's folder, and a link that starts
+ * with `/` from the docs folder, with or without `.md`, as VitePress reads
+ * it.
  */
 export function rewriteHref(
   href: string,
-  context: Pick<RenderContext, "pages" | "pageUrl" | "sourceUrl">,
+  context: Pick<RenderContext, "pages" | "pageUrl" | "sourceUrl" | "slug">,
 ): string {
-  const match = /^(?:\.\/)?([a-z0-9-]+)\.md(#.*)?$/.exec(href);
-  if (!match) return href;
-  const [, name = "", hash = ""] = match;
-  return context.pages.some((page) => page.slug === name)
-    ? `${context.pageUrl(name)}${hash}`
-    : `${context.sourceUrl(`${name}.md`)}${hash}`;
+  if (external.test(href) || href.startsWith("#")) return href;
+  const at = href.indexOf("#");
+  const path = at === -1 ? href : href.slice(0, at);
+  const hash = at === -1 ? "" : href.slice(at);
+  const file = path.startsWith("/")
+    ? posix.normalize(path.slice(1))
+    : fromPage(path, context.slug);
+  const name = file.replace(/\.(?:md|html)$/, "").replace(/\/$/, "");
+  const page = [name, `${name}/index`].find((slug) =>
+    context.pages.some((entry) => entry.slug === slug),
+  );
+  if (page) return `${context.pageUrl(page)}${hash}`;
+  if (file.endsWith(".md")) return `${context.sourceUrl(file)}${hash}`;
+  return href;
 }
 
 export function renderPage(
@@ -117,11 +249,31 @@ export function renderPage(
   let title = "";
   let summary = "";
 
-  const marked = new Marked({
+  const marked: Marked = new Marked({
+    extensions: [container],
     renderer: {
       code({ text, lang }: Tokens.Code) {
-        const language = (lang ?? "text").split(/\s/)[0] || "text";
-        return `<figure class="code"><figcaption><span>${escapeHtml(language)}</span><button class="copy" type="button">Copy</button></figcaption>${highlight(text, language)}</figure>\n`;
+        // VitePress info strings add `{1,3}`, `:line-numbers` and a `[file]` label.
+        const language = /^[\w+#-]+/.exec(lang ?? "")?.[0] ?? "text";
+        const label = /\[([^\]]+)\]/.exec(lang ?? "")?.[1] ?? language;
+        return `<figure class="code"><figcaption><span>${escapeHtml(label)}</span><button class="copy" type="button">Copy</button></figcaption>${highlight(text, language)}</figure>\n`;
+      },
+      blockquote({ tokens }: Tokens.Blockquote): string {
+        const first = tokens[0];
+        const alert =
+          first?.type === "paragraph" ? alertMarker.exec(first.raw) : null;
+        if (!first || !alert)
+          return `<blockquote>\n${this.parser.parse(tokens)}</blockquote>\n`;
+        const rest = first.raw.slice(alert[0].length);
+        const body: Token[] = [
+          ...(rest.trim() ? marked.lexer(rest) : []),
+          ...tokens.slice(1),
+        ];
+        return callout(
+          (alert[1] ?? "").toLowerCase(),
+          "",
+          this.parser.parse(body),
+        );
       },
       html({ text }: Tokens.HTML | Tokens.Tag) {
         const island = islandComment.exec(text.trim())?.[1];
@@ -131,18 +283,18 @@ export function renderPage(
       },
       link({ href, title: linkTitle, tokens }: Tokens.Link) {
         const target = rewriteHref(href, context);
-        const external = /^https?:/.test(target);
+        const offsite = /^https?:/.test(target);
         const attrs = [
           `href="${escapeHtml(target)}"`,
           linkTitle ? `title="${escapeHtml(linkTitle)}"` : "",
-          external ? 'rel="noreferrer"' : "",
+          offsite ? 'rel="noreferrer"' : "",
         ]
           .filter(Boolean)
           .join(" ");
         return `<a ${attrs}>${this.parser.parseInline(tokens)}</a>`;
       },
       image({ href, title: imageTitle, text }: Tokens.Image) {
-        const file = docsFile.exec(href)?.[1];
+        const file = docsImage(href, context.slug);
         if (file && !files.includes(file)) files.push(file);
         const size = file ? context.imageSize?.(file) : undefined;
         const attrs = [
@@ -202,10 +354,11 @@ export function renderPage(
     },
   });
 
-  const tokens = marked.lexer(markdown);
+  const { fields, body } = splitFrontmatter(markdown);
+  const tokens = marked.lexer(body);
   const used = new Map<string, number>();
   for (const token of tokens) {
-    if (token.type === "paragraph" && !summary && title)
+    if (token.type === "paragraph" && !summary && (title || fields.title))
       summary = plain(token.text);
     if (token.type !== "heading") continue;
     const heading = token as Tokens.Heading;
@@ -223,5 +376,12 @@ export function renderPage(
   }
 
   const html = marked.parser(tokens);
-  return { title, summary, html, headings, islands, files };
+  return {
+    title: title || fields.title || "",
+    summary: fields.description ?? summary,
+    html,
+    headings,
+    islands,
+    files,
+  };
 }

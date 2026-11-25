@@ -78,7 +78,10 @@ export async function loadSite(
   const rendered = new Map<string, RenderedPage>(
     pages.map((page) => [
       page.slug,
-      renderPage(sourceMap.get(page.slug) ?? "", context),
+      renderPage(sourceMap.get(page.slug) ?? "", {
+        ...context,
+        slug: page.slug,
+      }),
     ]),
   );
   const homeSource = await readOptional(join(dir, "index.md"));

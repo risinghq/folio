@@ -83,3 +83,84 @@ describe("renderPage", () => {
     expect(renderPage(source, context).html).not.toContain("btn");
   });
 });
+
+describe("a page in a folder", () => {
+  const nested = renderPage(
+    readFileSync(
+      new URL("fixture/docs/guide/writing.md", import.meta.url),
+      "utf8",
+    ),
+    {
+      ...context,
+      pages: [
+        ...context.pages,
+        { slug: "guide/writing", title: "Writing pages" },
+      ],
+      sourceUrl: (file: string) => `source:${file}`,
+      slug: "guide/writing",
+    },
+  );
+  const hrefs = [...nested.html.matchAll(/href="([^"]+)"/g)].map(
+    (match) => match[1],
+  );
+
+  it("takes its title and summary from frontmatter and does not show it", () => {
+    expect(nested.title).toBe("Writing pages");
+    expect(nested.summary).toBe(
+      "How a page in a folder links, warns and labels code.",
+    );
+    expect(nested.html).not.toContain("outline");
+  });
+
+  it("resolves relative links from its folder and root links from the docs folder", () => {
+    expect(hrefs).toEqual([
+      "/base/docs/getting-started",
+      "/base/docs/create-thing#options",
+      "source:../LICENSE.md",
+      "/base/docs/create-thing",
+    ]);
+  });
+
+  it("serves an image from a parent folder", () => {
+    expect(nested.files).toEqual(["images/shot.svg"]);
+  });
+
+  it("turns alerts and containers into callouts and keeps a plain quote", () => {
+    const callouts = [
+      ...nested.html.matchAll(/class="callout" data-kind="([a-z]+)"/g),
+    ].map((match) => match[1]);
+    expect(callouts).toEqual(["warning", "tip", "details"]);
+    expect(nested.html).toContain('<p class="callout-title">Keep it short</p>');
+    expect(nested.html).toContain("<blockquote>\n<p>A plain quote.</p>");
+    expect(nested.html).not.toMatch(/\[!WARNING\]|:::/);
+  });
+
+  it("labels a code block with its file name", () => {
+    expect(nested.html).toMatch(/<figcaption><span>vite\.config\.ts<\/span>/);
+    expect(nested.html).toContain("export");
+  });
+
+  it("renders a container's title as inline markdown", () => {
+    const { html } = renderPage(
+      "# T\n\n::: tip `skipLibCheck` & *more*\nBody.\n:::",
+      context,
+    );
+    const title = /<p class="callout-title">(.*?)<\/p>/.exec(html)?.[1];
+    expect(title).toBe("<code>skipLibCheck</code> &amp; <em>more</em>");
+  });
+
+  it("leaves an unknown container as text", () => {
+    const { html } = renderPage("# T\n\n::: unknown\nBody.\n:::", context);
+    expect(html).not.toContain("callout");
+    expect(html).toContain("Body.");
+  });
+
+  it("prefers the page's heading to a frontmatter title", () => {
+    const { title, summary } = renderPage(
+      "---\ntitle: Meta\n---\n\n# Heading\n\nText.",
+      context,
+    );
+    expect(title).toBe("Heading");
+    expect(summary).toBe("Text.");
+  });
+});

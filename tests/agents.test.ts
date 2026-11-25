@@ -105,7 +105,12 @@ describe("Markdown for agents", () => {
     const sections = tokens
       .filter((token): token is Tokens.Heading => token.type === "heading")
       .map((token) => `${token.depth} ${token.text}`);
-    expect(sections).toEqual(["1 Fixture", "2 Manual", "2 Optional"]);
+    expect(sections).toEqual([
+      "1 Fixture",
+      "2 Manual",
+      "2 Guide",
+      "2 Optional",
+    ]);
     const summary = tokens.find(
       (token): token is Tokens.Blockquote => token.type === "blockquote",
     );
@@ -126,6 +131,30 @@ describe("Markdown for agents", () => {
       .filter((token) => token.depth === 1)
       .map((token) => token.text);
     expect(titles).toEqual(["Fixture", "Getting started", "`createThing`"]);
+  });
+
+  it("writes a page in a folder with its own frontmatter replaced and its links resolved", () => {
+    const { meta, body } = parse(read("docs/guide/writing.md"));
+    expect(meta).toEqual({
+      title: "Writing pages",
+      description: "How a page in a folder links, warns and labels code.",
+      url: `${site}docs/guide/writing`,
+    });
+    expect(body).not.toContain("outline");
+    const links = targets(body);
+    expect(links).toEqual([
+      `${site}docs/getting-started.md`,
+      `${site}docs/create-thing.md#options`,
+      "https://github.com/o/r/blob/master/tests/fixture/LICENSE.md",
+      `${site}docs/create-thing.md`,
+      `${site}docs/images/shot.svg`,
+      `${site}llms.txt`,
+    ]);
+    const missing = links
+      .map((target) => builtFile(target.replace(/#.*$/, "")))
+      .filter((file) => file !== undefined)
+      .filter((file) => !existsSync(join(outDir, file)));
+    expect(missing).toEqual([]);
   });
 
   it("links each HTML page to its markdown", () => {
@@ -164,6 +193,9 @@ describe("markdownPath", () => {
     ["/site/docs/options", "/site/docs/options.md"],
     ["/site/docs/options/", "/site/docs/options.md"],
     ["/site/docs/options.html", "/site/docs/options.md"],
+    ["/site/docs/guide/start", "/site/docs/guide/start.md"],
+    ["/site/docs/guide/start/index.html", "/site/docs/guide/start.md"],
+    ["/site/docs/../secret", undefined],
     ["/site/assets/a.js", undefined],
     ["/other/docs/options", undefined],
   ])("%s → %s", (path, expected) => {
@@ -197,6 +229,16 @@ describe("the dev server", () => {
     expect(response.headers.get("content-type")).toMatch(/^text\/markdown/);
     expect(response.headers.get("vary")).toBe("Accept");
     expect(parse(await response.text()).meta.title).toBe("Getting started");
+  });
+
+  it("serves a page in a folder as HTML and as markdown", async () => {
+    const html = await fetch(`${origin}/site/docs/guide/writing`);
+    expect(html.status).toBe(200);
+    expect(await html.text()).toContain("<h1>Writing pages</h1>");
+    const markdown = await fetch(`${origin}/site/docs/guide/writing.md`);
+    expect(parse(await markdown.text()).meta.url).toBe(
+      `${site}docs/guide/writing`,
+    );
   });
 
   it("answers a browser with HTML", async () => {

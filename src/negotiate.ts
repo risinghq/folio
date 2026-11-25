@@ -30,6 +30,14 @@ export function prefersMarkdown(accept: string | null | undefined): boolean {
 }
 
 /**
+ * A manual page's path under the base: `docs/<slug>`, `.html` or
+ * `/index.html`. The folders match lazily, so `/index.html` is not read as
+ * part of the slug.
+ */
+export const pageRoute =
+  /^docs\/((?:[a-z0-9-]+\/)*?[a-z0-9-]+)(?:\.html|\/index\.html)?$/;
+
+/**
  * The Markdown file of the page a path under `base` opens: `index.md` for the
  * home page and `docs/<slug>.md` for a manual page. None for any other path.
  */
@@ -38,6 +46,6 @@ export function markdownPath(path: string, base = "/"): string | undefined {
   if (!path.startsWith(root) && `${path}/` !== root) return undefined;
   const rest = path.slice(root.length).replace(/\/$/, "");
   if (rest === "" || rest === "index.html") return `${root}index.md`;
-  const page = /^docs\/([a-z0-9-]+)(?:\.html|\/index\.html)?$/.exec(rest);
+  const page = pageRoute.exec(rest);
   return page ? `${root}docs/${page[1]}.md` : undefined;
 }
