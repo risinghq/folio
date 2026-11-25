@@ -3,7 +3,7 @@
 Run three commands in a package's folder:
 
 ```sh
-bun add -d https://github.com/risinghq/folio/releases/latest/download/folio.tgz
+bun add -d @risinghq/folio
 bunx folio init
 bun run docs:dev
 ```
@@ -28,17 +28,6 @@ It adds `docs:dev`, `docs:build` and `docs:preview` to `package.json`, and
 
 The site's title, version, description and GitHub link come from `package.json`.
 [Options](options.md) lists what else to set.
-
-## Pin a version
-
-`releases/latest` installs the newest release. To pin one, name its tag:
-
-```sh
-bun add -d https://github.com/risinghq/folio/releases/download/v0.0.1/folio.tgz
-```
-
-The [releases page](https://github.com/risinghq/folio/releases) lists every
-version.
 
 ## With your own Vite config
 

@@ -5,7 +5,7 @@ HTML page per manual page, Solid islands for live demos, and a markdown home
 page.
 
 ```sh
-bun add -d https://github.com/risinghq/folio/releases/download/v0.0.1/folio.tgz
+bun add -d @risinghq/folio
 bunx folio init
 bun run docs:dev
 ```

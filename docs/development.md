@@ -30,9 +30,20 @@ it to folio.rising.sh on a push to `master`.
 
 The release workflow refuses a tag that does not match `package.json`. It checks
 the package and packs it. It installs the tarball in an empty project, runs
-`folio init` and builds the starter site. Then it attaches the tarball to the
-tag's GitHub release twice: under its `npm pack` name and as `folio.tgz`, the
-name the `releases/latest` install URL uses.
+`folio init` and builds the starter site. Then it publishes the tarball to npm
+as `@risinghq/folio` and attaches it to the tag's GitHub release.
+
+The workflow publishes through npm trusted publishing, with no stored token. npm
+accepts a trusted publisher only for a package that already exists, so the first
+version is published by hand from a logged-in machine:
+
+```sh
+npm publish --access public
+npx npm@latest trust github @risinghq/folio --repo risinghq/folio \
+  --file release.yml --allow-publish
+```
+
+Then push its tag as usual. The workflow skips a version npm already has.
 
 ## The screenshot
 
