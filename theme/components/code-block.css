@@ -15,11 +15,17 @@
   color: var(--faint);
   border-bottom: 1px solid var(--line-subtle);
 }
-/* Shiki writes its theme's background inline; the block's own surface wins. */
+/*
+ * Shiki writes its theme's background inline; the block's own surface wins.
+ * No right padding: browsers count it as scrollable overflow, so a line that
+ * fits the box would still show a scrollbar.
+ */
 .code pre {
   margin: 0;
-  padding: 18px 20px;
+  padding: 18px 0 18px 20px;
   overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
   font: 13.5px/1.75 var(--mono);
   tab-size: 2;
   background: transparent !important;
