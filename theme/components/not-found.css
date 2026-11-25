@@ -1,0 +1,13 @@
+.not-found {
+  max-width: 640px;
+  margin: 80px auto;
+  padding: 0 24px;
+}
+.not-found ul {
+  padding-left: 20px;
+}
+.not-found a {
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 4px;
+}

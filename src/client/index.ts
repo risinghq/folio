@@ -1,6 +1,6 @@
 import "@fontsource-variable/geist";
 import "@fontsource-variable/geist-mono";
-import "../../theme/theme.css";
+import "../../theme/index.css";
 import { render } from "@solidjs/web";
 import { createComponent, type Component } from "solid-js";
 
@@ -18,9 +18,9 @@ async function copy(button: HTMLButtonElement, code: string): Promise<void> {
 function setupCopy(): void {
   document.addEventListener("click", (event) => {
     const button = (event.target as Element).closest<HTMLButtonElement>(
-      "figure.code > .copy",
+      "figure.code .copy",
     );
-    const code = button?.parentElement?.querySelector("pre")?.textContent;
+    const code = button?.closest("figure")?.querySelector("pre")?.textContent;
     if (!button || code == null) return;
     void copy(button, code);
   });
@@ -55,8 +55,9 @@ function setupMenu(): void {
     set(button.getAttribute("aria-expanded") !== "true"),
   );
   sidebar.addEventListener("click", (event) => {
-    if ((event.target as Element).closest("a")) set(false);
+    if ((event.target as Element).closest("a, .menu-close")) set(false);
   });
+  document.querySelector(".scrim")?.addEventListener("click", () => set(false));
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") set(false);
   });

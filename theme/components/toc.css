@@ -1,0 +1,102 @@
+/* "On this page": the rail on wide screens, a disclosure above the title on narrow ones. */
+
+.rail {
+  position: sticky;
+  top: var(--header);
+  align-self: start;
+  padding: 48px 32px 0 0;
+  font-size: 14px;
+}
+.toc p {
+  margin: 0 0 14px;
+  font: 12.5px var(--mono);
+  color: var(--faint);
+}
+.toc ul {
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+  border-left: 1px solid var(--line-subtle);
+}
+.toc a {
+  display: block;
+  margin-left: -1px;
+  padding: 4px 0 4px 15px;
+  color: var(--faint);
+  border-left: 2px solid transparent;
+}
+.toc li[data-depth="3"] a {
+  padding-left: 27px;
+}
+.toc a:hover {
+  color: var(--text);
+}
+.toc a[aria-current="location"] {
+  color: var(--text);
+  border-left-color: var(--accent);
+}
+.to-top {
+  font-size: 13.5px;
+  color: var(--faint);
+}
+.to-top:hover {
+  color: var(--text);
+}
+
+.toc-inline {
+  display: none;
+}
+
+@media (max-width: 1180px) {
+  .rail {
+    display: none;
+  }
+}
+
+@media (max-width: 820px) {
+  .toc-inline {
+    display: block;
+    margin: 0 0 24px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    font-size: 15px;
+  }
+  .toc-inline summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    cursor: pointer;
+    list-style: none;
+  }
+  .toc-inline summary::-webkit-details-marker {
+    display: none;
+  }
+  .toc-inline summary::after {
+    content: "";
+    width: 7px;
+    height: 7px;
+    margin-top: -4px;
+    border: solid var(--muted);
+    border-width: 0 1.5px 1.5px 0;
+    transform: rotate(45deg);
+  }
+  .toc-inline[open] summary::after {
+    margin-top: 4px;
+    transform: rotate(-135deg);
+  }
+  .toc-inline ul {
+    list-style: none;
+    margin: 0;
+    padding: 0 16px 12px;
+  }
+  .toc-inline a {
+    display: block;
+    padding: 6px 0;
+    color: var(--muted);
+  }
+  .toc-inline li[data-depth="3"] a {
+    padding-left: 12px;
+  }
+}

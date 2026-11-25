@@ -1,0 +1,110 @@
+/* Controls for a landing or an island. Their class names are public API. */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 16px;
+  font: 500 14px/1 var(--font);
+  color: var(--text);
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    opacity 0.15s,
+    transform 0.12s var(--ease);
+}
+.btn:hover {
+  border-color: var(--faint);
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.btn-primary {
+  color: var(--bg);
+  background: var(--text);
+  border-color: var(--text);
+}
+.btn-primary:hover {
+  border-color: var(--text);
+  opacity: 0.88;
+}
+.btn-ghost {
+  color: var(--muted);
+  background: none;
+  border-color: transparent;
+}
+.btn-ghost:hover {
+  color: var(--text);
+  border-color: transparent;
+}
+.btn-sm {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 13px;
+  border-radius: var(--r-sm);
+}
+
+input[type="range"] {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--accent);
+}
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+input:disabled {
+  opacity: 0.45;
+}
+
+.select {
+  position: relative;
+  display: block;
+}
+.select select {
+  appearance: none;
+  width: 100%;
+  height: 34px;
+  padding: 0 32px 0 12px;
+  font: 14px var(--font);
+  color: var(--text);
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+.select::after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  top: 11px;
+  width: 7px;
+  height: 7px;
+  pointer-events: none;
+  border: solid var(--muted);
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+
+.label {
+  font: 12.5px/1.4 var(--mono);
+  color: var(--faint);
+}
+
+:not(pre) > code {
+  font-size: 0.86em;
+  color: var(--text);
+  padding: 1px 6px;
+  border-radius: var(--r-sm);
+  background: var(--raised);
+  border: 1px solid var(--line);
+}

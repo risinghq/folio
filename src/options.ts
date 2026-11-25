@@ -7,6 +7,8 @@ export interface NavLink {
 export interface FolioOptions {
   /** The project name: the header brand and the suffix of every page title. */
   title: string;
+  /** The version shown beside the brand. */
+  version?: string;
   /** The home page's meta description. */
   description?: string;
   /** The manual's folder, relative to the Vite root. It holds `README.md`. */
@@ -30,10 +32,10 @@ export interface FolioOptions {
   footer?: string;
 }
 
-export type ResolvedOptions = Required<
-  Omit<FolioOptions, "landing" | "repository" | "islands">
-> &
-  Pick<FolioOptions, "landing" | "repository" | "islands">;
+type Optional = "landing" | "repository" | "islands" | "version";
+
+export type ResolvedOptions = Required<Omit<FolioOptions, Optional>> &
+  Pick<FolioOptions, Optional>;
 
 export function resolveOptions(options: FolioOptions): ResolvedOptions {
   return {

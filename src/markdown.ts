@@ -82,7 +82,7 @@ export function renderPage(
     renderer: {
       code({ text, lang }: Tokens.Code) {
         const language = (lang ?? "text").split(/\s/)[0] || "text";
-        return `<figure class="code" data-lang="${escapeHtml(language)}"><button class="copy" type="button" aria-label="Copy code">Copy</button>${highlight(text, language)}</figure>\n`;
+        return `<figure class="code"><figcaption><span>${escapeHtml(language)}</span><button class="copy" type="button">Copy</button></figcaption>${highlight(text, language)}</figure>\n`;
       },
       html({ text }: Tokens.HTML | Tokens.Tag) {
         const island = islandComment.exec(text.trim())?.[1];

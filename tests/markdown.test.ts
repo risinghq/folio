@@ -44,7 +44,7 @@ describe("renderPage", () => {
 
   it("highlights code with a copy button", () => {
     expect(page.html).toMatch(
-      /<figure class="code" data-lang="ts"><button class="copy"[^>]*>Copy<\/button><pre/,
+      /<figure class="code"><figcaption><span>ts<\/span><button class="copy"[^>]*>Copy<\/button><\/figcaption><pre/,
     );
   });
 

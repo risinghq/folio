@@ -48,60 +48,83 @@ ${shell.body}
 `;
 }
 
+const pageNumber = (index: number) => String(index + 1).padStart(2, "0");
+
 function header(
   options: ResolvedOptions,
   routes: Routes,
   pages: PageEntry[],
+  inManual: boolean,
 ): string {
+  const manual = `<a href="${routes.page(pages[0]?.slug ?? "")}"${inManual ? ' aria-current="true"' : ""}>Manual</a>`;
   const links = [
-    { text: "Manual", href: routes.page(pages[0]?.slug ?? "") },
     ...options.nav,
     ...(options.repository
       ? [{ text: "GitHub", href: options.repository }]
       : []),
-  ];
-  const nav = links
+  ]
     .map((link) => {
       const external = /^https?:/.test(link.href) ? ' rel="noreferrer"' : "";
       return `<a href="${escapeHtml(link.href)}"${external}>${escapeHtml(link.text)}</a>`;
     })
     .join("");
+  const version = options.version
+    ? `<span class="version">${escapeHtml(options.version)}</span>`
+    : "";
   return `<a class="skip" href="#content">Skip to content</a>
 <header class="site-header">
-<button class="menu-button" type="button" aria-controls="sidebar" aria-expanded="false" aria-label="Open the manual's pages"><span></span></button>
-<a class="brand" href="${routes.home}"><span class="brand-mark" aria-hidden="true"></span>${escapeHtml(options.title)}</a>
-<nav aria-label="Site">${nav}<button class="theme-toggle" type="button" aria-label="Switch between light and dark"></button></nav>
+<a class="brand" href="${routes.home}"><span class="brand-mark" aria-hidden="true"></span>${escapeHtml(options.title)}</a>${version}
+<nav class="site-nav" aria-label="Site">${manual}${links}</nav>
+<button class="theme-toggle" type="button" aria-label="Switch between light and dark"></button>
 </header>`;
 }
 
 function sidebar(pages: PageEntry[], current: string, routes: Routes): string {
   const items = pages
-    .map((page) => {
+    .map((page, index) => {
       const currentAttr = page.slug === current ? ' aria-current="page"' : "";
-      return `<li><a href="${routes.page(page.slug)}"${currentAttr}>${escapeHtml(page.title)}</a></li>`;
+      return `<li><a href="${routes.page(page.slug)}"${currentAttr}><span class="num">${pageNumber(index)}</span><span>${escapeHtml(page.title)}</span></a></li>`;
     })
     .join("");
-  return `<nav class="sidebar" id="sidebar" aria-label="Manual"><p>Manual</p><ul>${items}</ul></nav>`;
+  return `<nav class="sidebar" id="sidebar" aria-label="Manual">
+<div class="sidebar-head"><span>Manual</span><span>${pages.length}</span><button class="menu-close" type="button" aria-label="Close the manual's pages"></button></div>
+<ol>${items}</ol>
+</nav>
+<div class="scrim" aria-hidden="true"></div>`;
 }
 
-function toc(page: RenderedPage): string {
-  if (page.headings.length === 0) return "";
-  const items = page.headings
+function headingList(page: RenderedPage): string {
+  return page.headings
     .map(
       (heading) =>
         `<li data-depth="${heading.depth}"><a href="#${heading.id}">${escapeHtml(heading.title)}</a></li>`,
     )
     .join("");
-  return `<nav class="toc" aria-label="On this page"><p>On this page</p><ul>${items}</ul></nav>`;
 }
 
-function pager(pages: PageEntry[], current: string, routes: Routes): string {
-  const index = pages.findIndex((page) => page.slug === current);
-  const link = (page: PageEntry | undefined, rel: string, label: string) =>
-    page
-      ? `<a href="${routes.page(page.slug)}" rel="${rel}"><span>${label}</span>${escapeHtml(page.title)}</a>`
-      : "";
-  return `<nav aria-label="Pages">${link(pages[index - 1], "prev", "Previous")}${link(pages[index + 1], "next", "Next")}</nav>`;
+function rail(page: RenderedPage): string {
+  const toc = page.headings.length
+    ? `<nav class="toc" aria-label="On this page"><p>On this page</p><ul>${headingList(page)}</ul></nav>`
+    : "";
+  return `<aside class="rail">${toc}<a class="to-top" href="#content">Back to top</a></aside>`;
+}
+
+function inlineToc(page: RenderedPage): string {
+  return page.headings.length
+    ? `<details class="toc-inline"><summary>On this page</summary><ul>${headingList(page)}</ul></details>`
+    : "";
+}
+
+function pager(pages: PageEntry[], index: number, routes: Routes): string {
+  const link = (offset: number, rel: string, label: string) => {
+    const page = pages[index + offset];
+    if (!page) return "";
+    const number = pageNumber(index + offset);
+    const caption =
+      rel === "prev" ? `← ${label} · ${number}` : `${number} · ${label} →`;
+    return `<a href="${routes.page(page.slug)}" rel="${rel}"><span>${caption}</span>${escapeHtml(page.title)}</a>`;
+  };
+  return `<nav class="pager" aria-label="Pages">${link(-1, "prev", "Previous")}${link(1, "next", "Next")}</nav>`;
 }
 
 function footer(options: ResolvedOptions): string {
@@ -124,17 +147,23 @@ export function manualPage(input: ManualPageInput): string {
   const edit = options.repository
     ? `<a href="${escapeHtml(`${options.repository}/edit/${options.branch}/${options.docsPath}/${slug}.md`)}" rel="noreferrer">Edit this page on GitHub</a>`
     : "";
-  const body = `${header(options, routes, pages)}
+  const index = pages.findIndex((entry) => entry.slug === slug);
+  const number = pageNumber(index);
+  const first = routes.page(pages[0]?.slug ?? "");
+  const body = `${header(options, routes, pages, true)}
+<div class="menu-bar"><button class="menu-button" type="button" aria-controls="sidebar" aria-expanded="false"><span class="menu-icon" aria-hidden="true"></span>Manual</button><span class="menu-crumb">/ ${number} ${escapeHtml(page.title)}</span></div>
 <div class="doc-layout">
 ${sidebar(pages, slug, routes)}
 <main id="content" class="doc">
+<p class="crumb"><a href="${first}">Manual</a> / ${number}</p>
+${inlineToc(page)}
 <h1>${escapeHtml(page.title)}</h1>
 <article class="prose">
 ${page.html}
 </article>
-<footer class="doc-footer">${edit}${pager(pages, slug, routes)}</footer>
+<footer class="doc-footer">${pager(pages, index, routes)}${edit}</footer>
 </main>
-${toc(page)}
+${rail(page)}
 </div>
 ${footer(options)}`;
   return document(
@@ -161,7 +190,7 @@ export function homePage(input: HomePageInput): string {
   const main = options.landing
     ? `<main id="content" class="island landing-root" data-island="${escapeHtml(options.landing)}" data-eager></main>`
     : `<main id="content" class="not-found"><h1>${escapeHtml(options.title)}</h1><p><a href="${first}">Read the manual</a></p></main>`;
-  const body = `${header(options, routes, pages)}
+  const body = `${header(options, routes, pages, false)}
 ${main}
 ${footer(options)}`;
   return document(
@@ -178,7 +207,7 @@ export function notFoundPage(input: HomePageInput): string {
         `<li><a href="${routes.page(page.slug)}">${escapeHtml(page.title)}</a></li>`,
     )
     .join("");
-  const body = `${header(options, routes, pages)}
+  const body = `${header(options, routes, pages, false)}
 <main id="content" class="not-found"><h1>Page not found</h1><p>These pages exist:</p><ul>${items}</ul></main>
 ${footer(options)}`;
   return document(

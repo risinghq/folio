@@ -22,7 +22,7 @@
       "types": "./dist/highlight.d.ts",
       "default": "./dist/highlight.js"
     },
-    "./theme.css": "./theme/theme.css"
+    "./theme.css": "./theme/index.css"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
