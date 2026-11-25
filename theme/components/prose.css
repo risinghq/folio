@@ -107,4 +107,59 @@
     background: none;
     border: 0;
   }
+
+  :scope blockquote {
+    margin: 0 0 24px;
+    padding: 2px 0 2px 18px;
+    border-left: 2px solid var(--line);
+    color: var(--muted);
+  }
+  :scope .callout {
+    --kind: var(--callout-note);
+    margin: 0 0 24px;
+    padding: 14px 18px;
+    background: var(--surface);
+    border: 1px solid var(--line-subtle);
+    border-left: 3px solid var(--kind);
+    border-radius: var(--r-md);
+  }
+  :scope .callout[data-kind="tip"] {
+    --kind: var(--callout-tip);
+  }
+  :scope .callout[data-kind="important"] {
+    --kind: var(--callout-important);
+  }
+  :scope .callout[data-kind="warning"] {
+    --kind: var(--callout-warning);
+  }
+  :scope .callout[data-kind="caution"],
+  :scope .callout[data-kind="danger"] {
+    --kind: var(--callout-caution);
+  }
+  :scope .callout[data-kind="details"] {
+    --kind: var(--line);
+  }
+  :scope .callout > :last-child {
+    margin-bottom: 0;
+  }
+  :scope .callout-title,
+  :scope .callout summary {
+    margin: 0 0 6px;
+    font-weight: 600;
+    color: var(--kind);
+  }
+  :scope .callout summary {
+    margin: 0;
+    color: var(--text);
+    cursor: pointer;
+  }
+  :scope details.callout[open] summary {
+    margin-bottom: 10px;
+  }
+  :scope .code-group {
+    margin: 0 0 24px;
+  }
+  :scope .code-group > .code {
+    margin-bottom: 8px;
+  }
 }

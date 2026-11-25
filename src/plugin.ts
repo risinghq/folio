@@ -17,7 +17,7 @@ import {
   type Routes,
 } from "./layout.ts";
 import { docsFile, escapeHtml } from "./markdown.ts";
-import { markdownPath, prefersMarkdown } from "./negotiate.ts";
+import { markdownPath, pageRoute, prefersMarkdown } from "./negotiate.ts";
 import { renderCard } from "./og.ts";
 import {
   resolveOptions,
@@ -91,7 +91,7 @@ export function matchRoute(path: string, base: string): Route | null {
   if (!path.startsWith(base)) return null;
   const rest = path.slice(base.length).replace(/\/$/, "");
   if (rest === "" || rest === "index.html") return { kind: "home" };
-  const page = /^docs\/([a-z0-9-]+)(?:\.html|\/index\.html)?$/.exec(rest);
+  const page = pageRoute.exec(rest);
   if (page) return { kind: "page", slug: page[1] ?? "" };
   const file = docsFile.exec(rest.slice("docs/".length));
   if (rest.startsWith("docs/") && file)

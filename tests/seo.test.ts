@@ -86,6 +86,7 @@ describe("a site with an address", () => {
       `${origin}/site/`,
       `${origin}/site/docs/getting-started`,
       `${origin}/site/docs/create-thing`,
+      `${origin}/site/docs/guide/writing`,
     ]);
   }, 60_000);
 

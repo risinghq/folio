@@ -1,3 +1,5 @@
+import { posix } from "node:path";
+
 /** A link in the site header. */
 export interface NavLink {
   text: string;
@@ -123,7 +125,7 @@ export function repositoryFileUrl(
   file: string,
 ): string | undefined {
   if (!options.repository) return undefined;
-  const path = [options.docsPath, file].filter(Boolean).join("/");
+  const path = posix.join(options.docsPath, file);
   return `${options.repository}/${view}/${options.branch}/${path}`;
 }
 

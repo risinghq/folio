@@ -1,7 +1,13 @@
 import { Marked, type Token, type Tokens } from "marked";
 
 import type { Routes } from "./layout.ts";
-import { docsFile, islandComment, rewriteHref } from "./markdown.ts";
+import { groupPages } from "./manual.ts";
+import {
+  docsImage,
+  islandComment,
+  rewriteHref,
+  splitFrontmatter,
+} from "./markdown.ts";
 import type { ResolvedOptions } from "./options.ts";
 import { docsSourceUrl, type Site } from "./site.ts";
 
@@ -22,15 +28,17 @@ function portable(
   options: ResolvedOptions,
   routes: Routes,
   htmlUrl: string,
+  slug?: string,
 ): string {
   const context = {
     pages: site.pages,
-    pageUrl: (slug: string) => link(routes, routes.markdown(slug)),
+    pageUrl: (page: string) => link(routes, routes.markdown(page)),
     sourceUrl: (file: string) => docsSourceUrl(options, file),
+    slug,
   };
   const marked = new Marked();
   return marked
-    .lexer(source)
+    .lexer(splitFrontmatter(source).body)
     .map((block) => {
       if (block.type === "code") return block.raw;
       if (block.type === "html" && islandComment.test(block.text.trim())) {
@@ -42,7 +50,7 @@ function portable(
       marked.walkTokens([block], (token: Token) => {
         if (token.type !== "link" && token.type !== "image") return;
         const { href } = token as Tokens.Link | Tokens.Image;
-        const file = token.type === "image" ? docsFile.exec(href)?.[1] : null;
+        const file = token.type === "image" ? docsImage(href, slug) : null;
         const target = file
           ? link(routes, routes.file(file))
           : rewriteHref(href, context);
@@ -91,6 +99,7 @@ export function agentFiles(
       options,
       routes,
       htmlUrl,
+      page.slug,
     ).trimEnd();
     const head = frontmatter({
       title: page.title,
@@ -121,17 +130,23 @@ export function agentFiles(
   }
 
   const summary = options.description || site.home?.summary || "";
-  const list = site.pages
-    .map((page) => {
-      const about = site.rendered.get(page.slug)?.summary;
-      const url = link(routes, routes.markdown(page.slug));
-      return `- [${page.title}](${url})${about ? `: ${about}` : ""}`;
+  // One section per group of the manual's index, as llmstxt.org lists files.
+  const sections = groupPages(site.pages)
+    .map(({ group, pages: grouped }) => {
+      const list = grouped
+        .map((page) => {
+          const about = site.rendered.get(page.slug)?.summary;
+          const url = link(routes, routes.markdown(page.slug));
+          return `- [${page.title}](${url})${about ? `: ${about}` : ""}`;
+        })
+        .join("\n");
+      return `## ${group ?? "Manual"}\n\n${list}\n\n`;
     })
-    .join("\n");
+    .join("");
   const title = `# ${options.title}\n\n${summary ? `> ${summary}\n\n` : ""}`;
   files.push({
     path: routes.llms,
-    body: `${title}## Manual\n\n${list}\n\n## Optional\n\n- [Every page in one file](${link(routes, routes.llmsFull)})\n`,
+    body: `${title}${sections}## Optional\n\n- [Every page in one file](${link(routes, routes.llmsFull)})\n`,
   });
   files.push({
     path: routes.llmsFull,

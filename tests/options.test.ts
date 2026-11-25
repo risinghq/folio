@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { repositoryUrl, resolveOptions } from "../src/options.ts";
+import {
+  repositoryFileUrl,
+  repositoryUrl,
+  resolveOptions,
+} from "../src/options.ts";
 
 describe("repositoryUrl", () => {
   it.each([
@@ -68,5 +72,28 @@ describe("the site's address", () => {
       { homepage: "https://thing.dev" },
     );
     expect(options.url).toBe("https://docs.thing.dev");
+  });
+});
+
+describe("repositoryFileUrl", () => {
+  const options = {
+    repository: "https://github.com/o/r",
+    branch: "main",
+    docsPath: "packages/thing/docs",
+  };
+
+  it.each([
+    ["guide/start.md", "packages/thing/docs/guide/start.md"],
+    ["../CHANGELOG.md", "packages/thing/CHANGELOG.md"],
+  ])("places %s inside the repository", (file, path) => {
+    expect(repositoryFileUrl(options, "blob", file)).toBe(
+      `https://github.com/o/r/blob/main/${path}`,
+    );
+  });
+
+  it("has none without a repository", () => {
+    expect(
+      repositoryFileUrl({ ...options, repository: undefined }, "edit", "a.md"),
+    ).toBeUndefined();
   });
 });

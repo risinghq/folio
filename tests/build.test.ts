@@ -44,6 +44,8 @@ describe("build", () => {
       "docs/getting-started/index.html",
       "docs/getting-started.html",
       "docs/create-thing/index.html",
+      "docs/guide/writing/index.html",
+      "docs/guide/writing.html",
     ]) {
       expect(read(file)).toMatch(/^<!doctype html>/);
     }
@@ -59,6 +61,25 @@ describe("build", () => {
     expect(html).toContain('rel="next"');
     expect(html).toContain(
       "https://github.com/o/r/edit/master/tests/fixture/docs/getting-started.md",
+    );
+  });
+
+  it("heads each group of the sidebar with its heading", () => {
+    const html = read("docs/guide/writing/index.html");
+    const sidebar = /<nav class="sidebar"[\s\S]*?<\/nav>/.exec(html)?.[0] ?? "";
+    const order = [
+      ...sidebar.matchAll(
+        /sidebar-group">([^<]+)|href="\/site\/docs\/([^"]+)"/g,
+      ),
+    ].map((match) => match[1] ?? match[2]);
+    expect(order).toEqual([
+      "getting-started",
+      "create-thing",
+      "Guide",
+      "guide/writing",
+    ]);
+    expect(html).toContain(
+      "https://github.com/o/r/edit/master/tests/fixture/docs/guide/writing.md",
     );
   });
 

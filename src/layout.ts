@@ -1,4 +1,4 @@
-import type { PageEntry } from "./manual.ts";
+import { groupPages, type PageEntry } from "./manual.ts";
 import {
   escapeHtml,
   islandElement,
@@ -158,15 +158,22 @@ function header(
 }
 
 function sidebar(pages: PageEntry[], current: string, routes: Routes): string {
-  const items = pages
-    .map((page, index) => {
-      const currentAttr = page.slug === current ? ' aria-current="page"' : "";
-      return `<li><a href="${routes.page(page.slug)}"${currentAttr}><span class="num">${pageNumber(index)}</span><span>${escapeHtml(page.title)}</span></a></li>`;
+  const item = (page: PageEntry) => {
+    const index = pages.indexOf(page);
+    const currentAttr = page.slug === current ? ' aria-current="page"' : "";
+    return `<li><a href="${routes.page(page.slug)}"${currentAttr}><span class="num">${pageNumber(index)}</span><span>${escapeHtml(page.title)}</span></a></li>`;
+  };
+  const lists = groupPages(pages)
+    .map(({ group, pages: grouped }) => {
+      const heading = group
+        ? `<p class="sidebar-group">${escapeHtml(group)}</p>`
+        : "";
+      return `${heading}<ol>${grouped.map(item).join("")}</ol>`;
     })
-    .join("");
+    .join("\n");
   return `<nav class="sidebar" id="sidebar" aria-label="Manual">
 <div class="sidebar-head"><span>Manual</span><span>${pages.length}</span><button class="menu-close" type="button" aria-label="Close the manual's pages"></button></div>
-<ol>${items}</ol>
+${lists}
 </nav>
 <div class="scrim" aria-hidden="true"></div>`;
 }
