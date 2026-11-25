@@ -46,6 +46,42 @@ describe("the built site in a browser", () => {
     await expect(island.textContent()).resolves.toBe("counter mounted");
   });
 
+  it("sets the island that ends index.md beside the text, and under it on a phone", async () => {
+    const boxes = async () => {
+      await page.goto(url);
+      const text = await page.locator(".home h1").boundingBox();
+      const island = await page.locator(".home .island").boundingBox();
+      return { text: text!, island: island! };
+    };
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const wide = await boxes();
+    expect(wide.island.x).toBeGreaterThan(wide.text.x + wide.text.width);
+    await page.setViewportSize({ width: 390, height: 800 });
+    const narrow = await boxes();
+    expect(narrow.island.y).toBeGreaterThan(narrow.text.y + narrow.text.height);
+    await page.setViewportSize({ width: 1280, height: 720 });
+  });
+
+  it("keeps the article's styles out of an island", async () => {
+    await page.goto(`${url}docs/getting-started`);
+    const island = page.locator(".prose [data-island=counter]");
+    await island.scrollIntoViewIfNeeded();
+    await island.locator("p").waitFor();
+    const margins = await page.evaluate(() => {
+      const bottom = (el: Element) => getComputedStyle(el).marginBottom;
+      const plain = document.body.appendChild(document.createElement("p"));
+      const result = {
+        island: bottom(document.querySelector(".island p")!),
+        article: bottom(document.querySelector(".prose > p")!),
+        plain: bottom(plain),
+      };
+      plain.remove();
+      return result;
+    });
+    expect(margins.article).not.toBe(margins.plain);
+    expect(margins.island).toBe(margins.plain);
+  });
+
   it("mounts an article island as it nears the viewport", async () => {
     await page.goto(`${url}docs/getting-started`);
     const island = page.locator(".prose [data-island=counter]");

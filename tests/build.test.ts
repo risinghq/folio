@@ -132,7 +132,7 @@ describe("build", () => {
         publicDir,
         logLevel: "silent",
         build: { outDir: ownOut, emptyOutDir: true },
-        plugins: [folio({ title: "Fixture" })],
+        plugins: [folio({ title: "Fixture", islands: "src/islands.ts" })],
       });
       expect(readFileSync(join(ownOut, "favicon.svg"), "utf8")).toBe(
         "<svg>own</svg>",

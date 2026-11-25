@@ -24,7 +24,7 @@ A project with its own Vite config passes the same object to the plugin,
 | `description` | `description`              | The home page's meta description.                                                 |
 | `repository`  | `repository`, as a web URL | The repository's address. Adds the GitHub link and Edit this page.                |
 | `docs`        | `"docs"`                   | The manual's folder, relative to the Vite root.                                   |
-| `branch`      | `"master"`                 | The branch Edit this page opens.                                                  |
+| `branch`      | the default branch         | The branch Edit this page opens.                                                  |
 | `docsPath`    | `"docs"`                   | The docs folder's path inside the repository.                                     |
 | `islands`     | —                          | A module mapping island names to loaders.                                         |
 | `nav`         | `[]`                       | Extra header links, after "Manual".                                               |
@@ -36,6 +36,10 @@ The defaults in code font are `package.json` fields of the nearest package above
 the Vite root. `repository` accepts `o/r`, `github:o/r`, and `git+https`,
 `git://` and `git@` URLs. `homepage` is ignored when it points at GitHub, where
 `npm init` sends it.
+
+The default branch is the one `origin/HEAD` names. A GitHub Actions checkout has
+no `origin/HEAD`, so there folio reads the repository's default branch from the
+workflow's event. With neither, it is `master`.
 
 ## Search and link previews
 

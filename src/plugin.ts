@@ -6,6 +6,8 @@ import { dirname, extname, isAbsolute, join, resolve } from "node:path";
 import type { Plugin, ResolvedConfig, Rolldown, ViteDevServer } from "vite";
 
 import { agentFiles } from "./agents.ts";
+import { defaultBranch } from "./branch.ts";
+import { exportedIslands, missingIslands } from "./island-names.ts";
 import {
   homePage,
   manualPage,
@@ -28,9 +30,13 @@ import { loadSite, type Site } from "./site.ts";
 const entryId = "virtual:folio/entry";
 const resolvedEntryId = `\0${entryId}`;
 const require = createRequire(import.meta.url);
+function islandsPath(root: string, islands: string): string {
+  return isAbsolute(islands) ? islands : resolve(root, islands);
+}
+
 export function entryModule(root: string, options: ResolvedOptions): string {
   const islands = options.islands
-    ? `import islands from ${JSON.stringify(isAbsolute(options.islands) ? options.islands : resolve(root, options.islands))};`
+    ? `import islands from ${JSON.stringify(islandsPath(root, options.islands))};`
     : "const islands = {};";
   const font = (name: string) =>
     `import ${JSON.stringify(require.resolve(name))};`;
@@ -214,9 +220,40 @@ function agentPath(path: string, base: string): boolean {
   );
 }
 
+/** Each page's docs-relative source, with the islands it places. */
+function placedIslands(site: Site, docs: string): Map<string, string[]> {
+  const placed = new Map(
+    [...site.rendered].map(([slug, page]) => [
+      join(docs, `${slug}.md`),
+      page.islands,
+    ]),
+  );
+  if (site.home) placed.set(join(docs, "index.md"), site.home.islands);
+  return placed;
+}
+
 export function folio(input: FolioOptions = {}): Plugin {
   let options: ResolvedOptions;
   let config: ResolvedConfig;
+
+  /**
+   * The names the islands module exports, read from the built module. None
+   * without an islands option; undefined when they are only known at run time.
+   */
+  async function islandNames(
+    context: Rolldown.PluginContext,
+  ): Promise<Set<string> | undefined> {
+    if (!options.islands) return new Set();
+    const resolved = await context.resolve(
+      islandsPath(config.root, options.islands),
+      resolvedEntryId,
+    );
+    const code = resolved && context.getModuleInfo(resolved.id)?.code;
+    if (!code) return undefined;
+    return exportedIslands(
+      context.parse(code) as unknown as Parameters<typeof exportedIslands>[0],
+    );
+  }
 
   /** Whether the project's public folder has a file, which then replaces folio's. */
   const own = (file: string) =>
@@ -291,7 +328,9 @@ export function folio(input: FolioOptions = {}): Plugin {
     },
     configResolved(resolved) {
       config = resolved;
-      options = resolveOptions(input, readPackage(resolved.root));
+      options = resolveOptions(input, readPackage(resolved.root), {
+        branch: defaultBranch(resolved.root),
+      });
     },
     resolveId(id) {
       return id === entryId ? resolvedEntryId : null;
@@ -341,6 +380,20 @@ export function folio(input: FolioOptions = {}): Plugin {
       ].join("\n");
       const routes = routesFor(config.base, options.url);
       const site = await loadSite(config.root, options, routes);
+      const exported = await islandNames(this);
+      const missing = exported
+        ? missingIslands(placedIslands(site, options.docs), exported)
+        : [];
+      if (missing.length > 0) {
+        const lacks = options.islands
+          ? `${options.islands} does not export`
+          : "no islands option is set for";
+        this.error(
+          missing
+            .map(({ page, names }) => `${page}: ${lacks} ${names.join(", ")}`)
+            .join("\n"),
+        );
+      }
       const emit = (fileName: string, source: string | Uint8Array) =>
         this.emitFile({ type: "asset", fileName, source });
       if (!own(iconFile)) emit(iconFile, icon);

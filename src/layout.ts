@@ -1,5 +1,10 @@
 import type { PageEntry } from "./manual.ts";
-import { escapeHtml, type RenderedPage } from "./markdown.ts";
+import {
+  escapeHtml,
+  islandElement,
+  trailingIsland,
+  type RenderedPage,
+} from "./markdown.ts";
 import type { ResolvedOptions } from "./options.ts";
 
 /** The routes of one site, under Vite's `base`. */
@@ -261,6 +266,20 @@ export interface HomePageInput {
   assets: Assets;
 }
 
+/**
+ * The home page's text. An island that ends `index.md` stands beside the text
+ * instead of under it.
+ */
+function homeMain(home: RenderedPage, options: ResolvedOptions): string {
+  const heading = `<h1>${escapeHtml(home.title || options.title)}</h1>`;
+  const { body, island } = trailingIsland(home.html);
+  if (!island)
+    return `<main id="content" class="home">${heading}<div class="prose">
+${home.html}</div></main>`;
+  return `<main id="content" class="home home-split"><div class="home-text">${heading}<div class="prose">
+${body}</div></div>${islandElement(island)}</main>`;
+}
+
 /** The home page: the docs folder's `index.md`, or a link to the manual. */
 export function homePage(
   input: HomePageInput & { home?: RenderedPage },
@@ -268,8 +287,7 @@ export function homePage(
   const { options, routes, pages, home } = input;
   const first = routes.page(pages[0]?.slug ?? "");
   const main = home
-    ? `<main id="content" class="home"><h1>${escapeHtml(home.title || options.title)}</h1><div class="prose">
-${home.html}</div></main>`
+    ? homeMain(home, options)
     : `<main id="content" class="not-found"><h1>${escapeHtml(options.title)}</h1><p><a href="${first}">Read the manual</a></p></main>`;
   const body = `${header(options, routes, pages, false)}
 ${main}

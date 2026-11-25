@@ -89,13 +89,20 @@ function defined(options: FolioOptions = {}): FolioOptions {
   );
 }
 
+/** What folio read from the checkout. */
+export interface Detected {
+  /** The repository's default branch. */
+  branch?: string;
+}
+
 /**
  * Fills each option the caller left out from `package.json`'s `folio` field,
- * then from its package fields, then from folio's defaults.
+ * then from its package fields and the checkout, then from folio's defaults.
  */
 export function resolveOptions(
   options: FolioOptions,
   pkg: PackageInfo = {},
+  detected: Detected = {},
 ): ResolvedOptions {
   return {
     title: pkg.name?.replace(/^@[^/]+\//, "") ?? "Docs",
@@ -104,7 +111,7 @@ export function resolveOptions(
     repository: repositoryUrl(pkg.repository),
     url: siteUrl(pkg.homepage),
     docs: "docs",
-    branch: "master",
+    branch: detected.branch ?? "master",
     docsPath: "docs",
     nav: [],
     footer: "",

@@ -48,6 +48,23 @@ export const docsFile =
 /** `<!-- island NAME -->` on its own line places a mounted component. */
 export const islandComment = /^<!--\s*island\s+([a-z0-9-]+)\s*-->\s*$/;
 
+/** The element a page's island mounts into. */
+export function islandElement(name: string): string {
+  return `<div class="island" data-island="${name}"></div>`;
+}
+
+const lastIsland = /<div class="island" data-island="([a-z0-9-]+)"><\/div>\s*$/;
+
+/** Splits off the island a page's HTML ends with, when it ends with one. */
+export function trailingIsland(html: string): {
+  body: string;
+  island?: string;
+} {
+  const match = lastIsland.exec(html);
+  if (!match) return { body: html };
+  return { body: html.slice(0, match.index), island: match[1] };
+}
+
 export function escapeHtml(text: string): string {
   return text
     .replaceAll("&", "&amp;")
@@ -110,7 +127,7 @@ export function renderPage(
         const island = islandComment.exec(text.trim())?.[1];
         if (!island) return text;
         islands.push(island);
-        return `<div class="island" data-island="${island}"></div>\n`;
+        return `${islandElement(island)}\n`;
       },
       link({ href, title: linkTitle, tokens }: Tokens.Link) {
         const target = rewriteHref(href, context);
