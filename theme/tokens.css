@@ -5,31 +5,34 @@
  * switches to the mobile shell.
  */
 
-/* One accent. Neutrals are warm so the accent reads as a colour, not a signal. */
+/*
+ * One accent at hue 40. Every neutral sits on hue 65, so the neutrals read
+ * warm and the accent reads as a colour, not a signal. Faint is still text
+ * (TOC links, labels, captions), so it keeps 4.5:1 on every surface.
+ */
 :root {
   color-scheme: dark;
-  --bg: oklch(0.16 0.006 60);
-  --bg-sunken: oklch(0.135 0.005 60);
-  --surface: oklch(0.195 0.007 60);
-  --raised: oklch(0.235 0.008 60);
-  --line: oklch(0.3 0.008 60);
-  --line-subtle: oklch(0.245 0.007 60);
-  --text: oklch(0.95 0.006 75);
-  --text-body: oklch(0.86 0.008 70);
-  --muted: oklch(0.74 0.01 70);
-  --faint: oklch(0.6 0.01 70);
+  --bg: oklch(0.16 0.006 65);
+  --bg-sunken: oklch(0.135 0.005 65);
+  --surface: oklch(0.195 0.007 65);
+  --raised: oklch(0.235 0.008 65);
+  --line: oklch(0.3 0.008 65);
+  --line-subtle: oklch(0.245 0.007 65);
+  --text: oklch(0.95 0.006 65);
+  --text-body: oklch(0.86 0.008 65);
+  --muted: oklch(0.77 0.01 65);
+  --faint: oklch(0.66 0.01 65);
   --accent: oklch(0.7 0.19 40);
-  --on-accent: oklch(0.2 0.03 40);
   --scrim: oklch(0 0 0 / 0.5);
 
-  --code-fg: oklch(0.88 0.008 75);
-  --code-comment: oklch(0.58 0.01 70);
-  --code-punct: oklch(0.7 0.01 70);
-  --code-keyword: oklch(0.72 0.15 40);
+  --code-fg: oklch(0.88 0.008 65);
+  --code-comment: oklch(0.63 0.01 65);
+  --code-punct: oklch(0.74 0.01 65);
+  --code-keyword: oklch(0.76 0.145 40);
   --code-string: oklch(0.8 0.1 150);
   --code-number: oklch(0.82 0.12 75);
-  --code-fn: oklch(0.95 0.006 75);
-  --code-tag: oklch(0.95 0.006 75);
+  --code-fn: oklch(0.95 0.006 65);
+  --code-tag: oklch(0.95 0.006 65);
   --code-attr: oklch(0.76 0.08 240);
 
   --font: "Figtree Variable", "Figtree Fallback", system-ui, sans-serif;
@@ -47,27 +50,27 @@
 /* The head script sets data-theme from the saved choice or the system. */
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: oklch(0.985 0.004 80);
-  --bg-sunken: oklch(0.962 0.006 75);
-  --surface: oklch(0.975 0.005 78);
+  --bg: oklch(0.985 0.004 65);
+  --bg-sunken: oklch(0.962 0.006 65);
+  --surface: oklch(0.975 0.005 65);
   --raised: oklch(1 0 0);
-  --line: oklch(0.88 0.008 70);
-  --line-subtle: oklch(0.92 0.006 70);
-  --text: oklch(0.2 0.01 60);
-  --text-body: oklch(0.28 0.01 60);
-  --muted: oklch(0.43 0.012 60);
-  --faint: oklch(0.53 0.01 60);
-  --accent: oklch(0.64 0.2 38);
+  --line: oklch(0.88 0.008 65);
+  --line-subtle: oklch(0.92 0.006 65);
+  --text: oklch(0.2 0.01 65);
+  --text-body: oklch(0.28 0.01 65);
+  --muted: oklch(0.43 0.012 65);
+  --faint: oklch(0.52 0.01 65);
+  --accent: oklch(0.57 0.178 40);
 
-  --code-fg: oklch(0.3 0.01 60);
-  --code-comment: oklch(0.6 0.01 70);
-  --code-punct: oklch(0.5 0.01 70);
-  --code-keyword: oklch(0.55 0.18 38);
+  --code-fg: oklch(0.3 0.01 65);
+  --code-comment: oklch(0.54 0.01 65);
+  --code-punct: oklch(0.48 0.01 65);
+  --code-keyword: oklch(0.54 0.168 40);
   --code-string: oklch(0.45 0.1 150);
-  --code-number: oklch(0.55 0.13 60);
-  --code-fn: oklch(0.22 0.01 60);
-  --code-tag: oklch(0.22 0.01 60);
-  --code-attr: oklch(0.48 0.1 245);
+  --code-number: oklch(0.52 0.11 65);
+  --code-fn: oklch(0.22 0.01 65);
+  --code-tag: oklch(0.22 0.01 65);
+  --code-attr: oklch(0.48 0.1 240);
 }
 
 @media (max-width: 820px) {
