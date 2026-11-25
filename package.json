@@ -5,17 +5,26 @@
   "description": "A documentation site from a repository's docs folder, built with Vite and Solid.",
   "license": "MIT",
   "files": [
+    "dist",
     "src",
     "theme"
   ],
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
     "./client": "./src/client/index.ts",
-    "./highlight": "./src/highlight.ts",
+    "./highlight": {
+      "types": "./dist/highlight.d.ts",
+      "default": "./dist/highlight.js"
+    },
     "./theme.css": "./theme/theme.css"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepare": "bun run build",
     "check": "bun run lint && bun run typecheck && bun run test",
     "fix": "oxlint --fix && oxfmt",
     "lint": "oxlint --deny-warnings && oxfmt --check",

@@ -1,4 +1,3 @@
-import { readFile } from "node:fs/promises";
 import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -20,6 +19,9 @@ import { loadSite, type Site } from "./site.ts";
 
 const entryId = "virtual:folio/entry";
 const resolvedEntryId = `\0${entryId}`;
+// Resolved from this file, which runs as src/plugin.ts in tests and as
+// dist/plugin.js when installed; both sit one level below the package root.
+// The browser runtime ships as TypeScript because Vite compiles it.
 const packageFile = (path: string) =>
   fileURLToPath(new URL(path, import.meta.url));
 
@@ -32,7 +34,7 @@ function entryModule(root: string, options: ResolvedOptions): string {
     `import "@fontsource-variable/geist";`,
     `import "@fontsource-variable/geist-mono";`,
     `import ${JSON.stringify(packageFile("../theme/theme.css"))};`,
-    `import { start } from ${JSON.stringify(packageFile("./client/index.ts"))};`,
+    `import { start } from ${JSON.stringify(packageFile("../src/client/index.ts"))};`,
     islands,
     `start(islands);`,
   ].join("\n");
@@ -52,13 +54,6 @@ export function matchRoute(path: string, base: string): Route | null {
   if (page) return { kind: "page", slug: page[1] ?? "" };
   if (rest.startsWith("docs/") || rest === "docs") return { kind: "missing" };
   return null;
-}
-
-/** The file `generateBundle` writes for a route. */
-function builtFile(route: Route): string {
-  if (route.kind === "home") return "index.html";
-  if (route.kind === "page") return `docs/${route.slug}/index.html`;
-  return "404.html";
 }
 
 function renderRoute(
@@ -109,7 +104,9 @@ export function folio(input: FolioOptions): Plugin {
     name: "folio",
     config() {
       return {
-        appType: "custom",
+        // MPA lets `vite preview` serve the emitted pages the way GitHub
+        // Pages does: `docs/x/index.html`, `docs/x.html`, else a 404.
+        appType: "mpa",
         build: { rolldownOptions: { input: { folio: entryId } } },
       };
     },
@@ -141,27 +138,6 @@ export function folio(input: FolioOptions): Plugin {
         res.statusCode = page.status;
         res.setHeader("Content-Type", "text/html; charset=utf-8");
         res.end(page.html);
-      });
-    },
-    configurePreviewServer(server) {
-      const outDir = resolve(config.root, config.build.outDir);
-      server.middlewares.use(async (req, res, next) => {
-        if (req.method !== "GET" || !req.url) return next();
-        const route = matchRoute(
-          decodeURIComponent(req.url.split(/[?#]/)[0] ?? ""),
-          config.base,
-        );
-        if (!route) return next();
-        let html: string;
-        try {
-          html = await readFile(join(outDir, builtFile(route)), "utf8");
-        } catch {
-          html = await readFile(join(outDir, "404.html"), "utf8");
-          res.statusCode = 404;
-        }
-        if (route.kind === "missing") res.statusCode = 404;
-        res.setHeader("Content-Type", "text/html; charset=utf-8");
-        res.end(html);
       });
     },
     async generateBundle(_, bundle) {
