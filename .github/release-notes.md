@@ -1,26 +1,21 @@
-folio 0.2.1 is out.
+folio 0.0.1 is out.
 
-This release makes page changes faster and sets the text in Figtree.
-
-## Faster page changes
-
-- The build writes `_headers`, which Cloudflare and Netlify read. It tells
-  browsers to keep the hashed files in `assets/` for a year, so a page change no
-  longer revalidates every script, stylesheet and font. A Vite project with its
-  own `public/_headers` keeps that file instead.
-- Each page prerenders a link when the reader hovers over it, so the next page
-  appears as soon as they click. Browsers without speculation rules prefetch the
-  page instead.
-- A page change cross-fades where the browser supports view transitions and the
-  reader allows motion.
-
-## Figtree
-
-Text is set in Figtree; code stays in Geist Mono. The local fallback is scaled
-to Figtree's metrics, so the swap still does not move the page.
-
-## Upgrade
+folio builds a documentation site from a repository's `docs/` folder: one static
+HTML page per manual page, Solid islands for live demos, and a markdown home
+page.
 
 ```sh
-bun add -d https://github.com/risinghq/folio/releases/download/v0.2.1/folio.tgz
+bun add -d https://github.com/risinghq/folio/releases/download/v0.0.1/folio.tgz
+bunx folio init
+bun run docs:dev
 ```
+
+- A `folio` command runs the site with no Vite config: `init`, `dev`, `build`
+  and `preview`. Options default to the fields of `package.json`; others go in
+  its `folio` field.
+- `docs/index.md` is the home page. A paragraph of links in it becomes a row of
+  buttons.
+- Text is set in Figtree and code in Geist Mono. The fonts are preloaded with a
+  metric-matched fallback, so they do not move the page as they load.
+- The build writes `_headers` to cache hashed assets for a year, and each page
+  prerenders a link when the reader hovers over it.
