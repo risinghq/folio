@@ -11,8 +11,10 @@ import {
   notFoundPage,
   routesFor,
   type Assets,
+  type Routes,
 } from "./layout.ts";
-import { docsFile } from "./markdown.ts";
+import { docsFile, escapeHtml } from "./markdown.ts";
+import { renderCard } from "./og.ts";
 import {
   resolveOptions,
   type FolioOptions,
@@ -115,6 +117,48 @@ function cacheHeaders(base: string, assetsDir: string): string {
   return `${base}${assetsDir}/*\n  Cache-Control: public, max-age=31536000, immutable\n`;
 }
 
+/** The home page and every manual page, for search engines. */
+function sitemap(routes: Routes, site: Site): string {
+  const urls = [routes.home, ...site.pages.map((p) => routes.page(p.slug))]
+    .map(
+      (path) =>
+        `<url><loc>${escapeHtml(routes.absolute(path) ?? path)}</loc></url>`,
+    )
+    .join("\n");
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}
+</urlset>
+`;
+}
+
+function robots(routes: Routes): string {
+  return `User-agent: *\nAllow: /\n\nSitemap: ${routes.absolute(`${routes.home}sitemap.xml`)}\n`;
+}
+
+/** The social card of the home page and of each manual page. */
+function cards(options: ResolvedOptions, routes: Routes, site: Site) {
+  const host = options.url ? new URL(options.url).host : undefined;
+  const home = {
+    path: routes.card(),
+    card: {
+      title: options.title,
+      summary: options.description || site.home?.summary || "",
+      host,
+    },
+  };
+  const pages = site.pages.map((page) => ({
+    path: routes.card(page.slug),
+    card: {
+      site: options.title,
+      title: page.title,
+      summary: site.rendered.get(page.slug)?.summary ?? "",
+      host,
+    },
+  }));
+  return [home, ...pages];
+}
+
 function renderRoute(
   route: Route,
   site: Site,
@@ -122,7 +166,7 @@ function renderRoute(
   base: string,
   assets: Assets,
 ) {
-  const routes = routesFor(base);
+  const routes = routesFor(base, options.url);
   const shared = { options, routes, pages: site.pages, assets };
   if (route.kind === "home")
     return { status: 200, html: homePage({ ...shared, home: site.home }) };
@@ -154,7 +198,11 @@ export function folio(input: FolioOptions = {}): Plugin {
     const path = decodeURIComponent(url.split(/[?#]/)[0] ?? "");
     const route = matchRoute(path, config.base);
     if (!route) return null;
-    const site = await loadSite(config.root, options, routesFor(config.base));
+    const site = await loadSite(
+      config.root,
+      options,
+      routesFor(config.base, options.url),
+    );
     if (route.kind === "file") {
       if (!site.files.includes(route.path)) return null;
       return {
@@ -239,18 +287,34 @@ export function folio(input: FolioOptions = {}): Plugin {
         `<script type="module" src="${config.base}${entry.fileName}"></script>`,
         speculationRules(config.base),
       ].join("\n");
-      const site = await loadSite(config.root, options, routesFor(config.base));
+      const routes = routesFor(config.base, options.url);
+      const site = await loadSite(config.root, options, routes);
       const emit = (fileName: string, source: string | Uint8Array) =>
         this.emitFile({ type: "asset", fileName, source });
+      const own = (file: string) =>
+        Boolean(config.publicDir && existsSync(join(config.publicDir, file)));
+      if (options.url) {
+        if (!own("sitemap.xml")) emit("sitemap.xml", sitemap(routes, site));
+        // Crawlers read robots.txt only at the host's root.
+        if (config.base === "/" && !own("robots.txt"))
+          emit("robots.txt", robots(routes));
+        if (options.ogImage === undefined) {
+          const drawn = cards(options, routes, site);
+          const images = await Promise.all(
+            drawn.map(({ card }) => renderCard(card)),
+          );
+          drawn.forEach(({ path }, i) =>
+            emit(path.slice(routes.home.length), images[i]!),
+          );
+        }
+      }
       const sources = await Promise.all(
         site.files.map((file) =>
           readFile(join(config.root, options.docs, file)),
         ),
       );
       site.files.forEach((file, i) => emit(`docs/${file}`, sources[i]!));
-      const ownHeaders =
-        config.publicDir && existsSync(join(config.publicDir, "_headers"));
-      if (config.base.startsWith("/") && !ownHeaders) {
+      if (config.base.startsWith("/") && !own("_headers")) {
         emit("_headers", cacheHeaders(config.base, config.build.assetsDir));
       }
       const assets = { head };

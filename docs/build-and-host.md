@@ -10,8 +10,15 @@
   docs/getting-started/index.html
   docs/images/...
   assets/...
+  og/index.png
+  og/docs/getting-started.png
+  sitemap.xml
+  robots.txt
   _headers
 ```
+
+The `og/` cards, `sitemap.xml` and `robots.txt` need the site's
+[`url`](options.md).
 
 Each page is written twice, as `docs/<slug>.html` and `docs/<slug>/index.html`,
 so `docs/<slug>` opens on a host that maps either form. Every other path should
@@ -44,6 +51,14 @@ GitHub Pages serves the folder as built. On Cloudflare Workers, serve it as
 static assets with `not_found_handling` set to `404-page`; folio's own site does
 this in
 [`site/wrangler.jsonc`](https://github.com/risinghq/folio/blob/master/site/wrangler.jsonc).
+
+## Search engines
+
+`sitemap.xml` lists the home page and every manual page by full address.
+`robots.txt` points crawlers at it. Crawlers read `robots.txt` only at the root
+of a domain, so a site under a `--base` path gets none. `404.html` asks search
+engines not to index it. A Vite project with its own `public/sitemap.xml` or
+`public/robots.txt` keeps that file instead.
 
 ## Page changes
 

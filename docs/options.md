@@ -17,22 +17,32 @@ A project with its own Vite config passes the same object to the plugin,
 `folio({ islands: "src/islands.ts" })`. A plugin option overrides the
 `package.json` field.
 
-| Option        | Default                    | Effect                                                             |
-| ------------- | -------------------------- | ------------------------------------------------------------------ |
-| `title`       | `name`, without its scope  | The project name: the header brand and each page title's suffix.   |
-| `version`     | `version`                  | The version shown beside the brand.                                |
-| `description` | `description`              | The home page's meta description.                                  |
-| `repository`  | `repository`, as a web URL | The repository's address. Adds the GitHub link and Edit this page. |
-| `docs`        | `"docs"`                   | The manual's folder, relative to the Vite root.                    |
-| `branch`      | `"master"`                 | The branch Edit this page opens.                                   |
-| `docsPath`    | `"docs"`                   | The docs folder's path inside the repository.                      |
-| `islands`     | —                          | A module mapping island names to loaders.                          |
-| `nav`         | `[]`                       | Extra header links, after "Manual".                                |
-| `footer`      | `""`                       | A footer line, as HTML.                                            |
+| Option        | Default                    | Effect                                                                            |
+| ------------- | -------------------------- | --------------------------------------------------------------------------------- |
+| `title`       | `name`, without its scope  | The project name: the header brand and each page title's suffix.                  |
+| `version`     | `version`                  | The version shown beside the brand.                                               |
+| `description` | `description`              | The home page's meta description.                                                 |
+| `repository`  | `repository`, as a web URL | The repository's address. Adds the GitHub link and Edit this page.                |
+| `docs`        | `"docs"`                   | The manual's folder, relative to the Vite root.                                   |
+| `branch`      | `"master"`                 | The branch Edit this page opens.                                                  |
+| `docsPath`    | `"docs"`                   | The docs folder's path inside the repository.                                     |
+| `islands`     | —                          | A module mapping island names to loaders.                                         |
+| `nav`         | `[]`                       | Extra header links, after "Manual".                                               |
+| `footer`      | `""`                       | A footer line, as HTML.                                                           |
+| `url`         | `homepage`                 | The site's public address. Adds the sitemap, canonical links and social cards.    |
+| `ogImage`     | a card per page            | The image every page shares: a URL or a path under the base. `false` shares none. |
 
 The defaults in code font are `package.json` fields of the nearest package above
 the Vite root. `repository` accepts `o/r`, `github:o/r`, and `git+https`,
-`git://` and `git@` URLs.
+`git://` and `git@` URLs. `homepage` is ignored when it points at GitHub, where
+`npm init` sends it.
+
+## Search and link previews
+
+Every page carries its title and summary as Open Graph tags. With `url` set, it
+also carries its canonical address and a share image, and the build writes
+[`sitemap.xml`, `robots.txt` and the cards](build-and-host.md#search-engines).
+Each card shows the page's title and summary on the dark theme.
 
 ## A site in a subfolder
 
