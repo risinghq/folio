@@ -1,8 +1,8 @@
 folio 0.0.1 is out.
 
-folio builds a documentation site from a repository's `docs/` folder: one
-static HTML page per manual page, Solid islands for live demos, and a markdown
-home page.
+folio builds a documentation site from a repository's `docs/` folder: one static
+HTML page per manual page, Solid islands for live demos, and a markdown home
+page.
 
 ```sh
 bun add -d https://github.com/risinghq/folio/releases/download/v0.0.1/folio.tgz
