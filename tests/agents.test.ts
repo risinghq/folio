@@ -206,6 +206,14 @@ describe("the dev server", () => {
     expect(response.headers.get("content-type")).toMatch(/^text\/html/);
   });
 
+  it("serves the tab icon a page links", async () => {
+    const page = await (await fetch(`${origin}/site/`)).text();
+    const href = /<link rel="icon" href="([^"]+)"/.exec(page)?.[1];
+    const response = await fetch(`${origin}${href}`);
+    expect(response.headers.get("content-type")).toBe("image/svg+xml");
+    expect(await response.text()).toMatch(/^<svg /);
+  });
+
   it("serves llms.txt", async () => {
     const response = await fetch(`${origin}/site/llms.txt`);
     expect(response.status).toBe(200);

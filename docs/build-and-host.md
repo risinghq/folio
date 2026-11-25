@@ -14,6 +14,7 @@
   llms.txt
   llms-full.txt
   assets/...
+  favicon.svg
   og/index.png
   og/docs/getting-started.png
   sitemap.xml
@@ -23,7 +24,9 @@
 
 The `og/` cards, `sitemap.xml` and `robots.txt` need the site's
 [`url`](options.md). The `.md` and `llms` files are for agents; see
-[Pages for agents](agents.md).
+[Pages for agents](agents.md). `favicon.svg` is the header's mark in the theme's
+accent, and every page links it as its tab icon. A Vite project with its own
+`public/favicon.svg` keeps that file instead.
 
 Each page is written twice, as `docs/<slug>.html` and `docs/<slug>/index.html`,
 so `docs/<slug>` opens on a host that maps either form. Every other path should
