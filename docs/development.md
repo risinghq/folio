@@ -36,6 +36,6 @@ name the `releases/latest` install URL uses.
 
 ## The screenshot
 
-`docs/images/screenshot.png` is the Write the manual page of this site, in the
-light theme, at 1280 by 800 CSS pixels and a device scale of 2. Retake it when
-the theme changes.
+The README shows `docs/images/screenshot.png`: the Write the manual page of this
+site, in the light theme, at 1280 by 800 CSS pixels and a device scale of 2.
+Retake it when the theme changes.

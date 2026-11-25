@@ -10,5 +10,3 @@ bun run docs:dev
 ```
 
 [Get started](getting-started.md) [GitHub](https://github.com/risinghq/folio)
-
-![A folio page: the sidebar lists the manual, the article sits in the middle and the table of contents on the right.](images/screenshot.png)
