@@ -29,6 +29,10 @@
       "types": "./dist/highlight.d.ts",
       "default": "./dist/highlight.js"
     },
+    "./negotiate": {
+      "types": "./dist/negotiate.d.ts",
+      "default": "./dist/negotiate.js"
+    },
     "./theme.css": "./theme/index.css"
   },
   "scripts": {

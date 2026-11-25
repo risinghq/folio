@@ -8,7 +8,11 @@
   404.html
   docs/getting-started.html
   docs/getting-started/index.html
+  docs/getting-started.md
   docs/images/...
+  index.md
+  llms.txt
+  llms-full.txt
   assets/...
   og/index.png
   og/docs/getting-started.png
@@ -18,7 +22,8 @@
 ```
 
 The `og/` cards, `sitemap.xml` and `robots.txt` need the site's
-[`url`](options.md).
+[`url`](options.md). The `.md` and `llms` files are for agents; see
+[Pages for agents](agents.md).
 
 Each page is written twice, as `docs/<slug>.html` and `docs/<slug>/index.html`,
 so `docs/<slug>` opens on a host that maps either form. Every other path should

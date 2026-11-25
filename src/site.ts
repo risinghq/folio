@@ -12,8 +12,11 @@ import type { ResolvedOptions } from "./options.ts";
 export interface Site {
   pages: PageEntry[];
   rendered: Map<string, RenderedPage>;
+  /** Each manual page's markdown, by slug. */
+  sources: Map<string, string>;
   /** `index.md` of the docs folder: the home page, when it exists. */
   home?: RenderedPage;
+  homeSource?: string;
   /** Every docs folder file a page or the home page shows. */
   files: string[];
 }
@@ -41,6 +44,13 @@ function readImageSize(
   return { width, height };
 }
 
+/** A docs folder file on the repository's web host, or its bare name with no repository. */
+export function docsSourceUrl(options: ResolvedOptions, file: string): string {
+  return options.repository
+    ? `${options.repository}/blob/${options.branch}/${options.docsPath}/${file}`
+    : file;
+}
+
 /** Reads the docs folder's index and renders every page it lists, and the home page. */
 export async function loadSite(
   root: string,
@@ -53,10 +63,7 @@ export async function loadSite(
     await readFile(join(dir, "README.md"), "utf8"),
     indexPath,
   );
-  const sourceUrl = (file: string) =>
-    options.repository
-      ? `${options.repository}/blob/${options.branch}/${options.docsPath}/${file}`
-      : file;
+  const sourceUrl = (file: string) => docsSourceUrl(options, file);
   const context = {
     pages,
     pageUrl: routes.page,
@@ -67,8 +74,14 @@ export async function loadSite(
   const sources = await Promise.all(
     pages.map((page) => readFile(join(dir, `${page.slug}.md`), "utf8")),
   );
+  const sourceMap = new Map(
+    pages.map((page, i) => [page.slug, sources[i] ?? ""]),
+  );
   const rendered = new Map<string, RenderedPage>(
-    pages.map((page, i) => [page.slug, renderPage(sources[i] ?? "", context)]),
+    pages.map((page) => [
+      page.slug,
+      renderPage(sourceMap.get(page.slug) ?? "", context),
+    ]),
   );
   const homeSource = await readOptional(join(dir, "index.md"));
   const home =
@@ -82,5 +95,5 @@ export async function loadSite(
       ),
     ),
   ];
-  return { pages, rendered, home, files };
+  return { pages, rendered, sources: sourceMap, home, homeSource, files };
 }

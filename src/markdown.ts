@@ -46,7 +46,7 @@ export const docsFile =
   /^(?:\.\/)?((?:[\w-]+\/)*[\w-]+\.(?:png|jpe?g|gif|svg|webp|avif))$/;
 
 /** `<!-- island NAME -->` on its own line places a mounted component. */
-const islandComment = /^<!--\s*island\s+([a-z0-9-]+)\s*-->\s*$/;
+export const islandComment = /^<!--\s*island\s+([a-z0-9-]+)\s*-->\s*$/;
 
 export function escapeHtml(text: string): string {
   return text
@@ -73,8 +73,14 @@ function plain(text: string): string {
     .trim();
 }
 
-/** A link to another `.md` page becomes its route; a link to any other file stays. */
-function rewriteHref(href: string, context: RenderContext): string {
+/**
+ * A link to another `.md` page becomes `pageUrl` of its slug; a link to a `.md`
+ * file the manual does not list goes to `sourceUrl`. Any other link stays.
+ */
+export function rewriteHref(
+  href: string,
+  context: Pick<RenderContext, "pages" | "pageUrl" | "sourceUrl">,
+): string {
   const match = /^(?:\.\/)?([a-z0-9-]+)\.md(#.*)?$/.exec(href);
   if (!match) return href;
   const [, name = "", hash = ""] = match;
