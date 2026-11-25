@@ -23,6 +23,9 @@ function entryModule(root: string, options: ResolvedOptions): string {
     ? `import islands from ${JSON.stringify(isAbsolute(options.islands) ? options.islands : resolve(root, options.islands))};`
     : "const islands = {};";
   return [
+    `import "@fontsource-variable/geist";`,
+    `import "@fontsource-variable/geist-mono";`,
+    `import "@risinghq/folio/theme.css";`,
     `import { start } from "@risinghq/folio/client";`,
     islands,
     `start(islands);`,
