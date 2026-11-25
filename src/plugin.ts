@@ -1,7 +1,9 @@
+import { existsSync, readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
-import { isAbsolute, join, resolve } from "node:path";
+import { dirname, extname, isAbsolute, join, resolve } from "node:path";
 
-import type { Plugin, ResolvedConfig, ViteDevServer } from "vite";
+import type { Plugin, ResolvedConfig, Rolldown, ViteDevServer } from "vite";
 
 import {
   homePage,
@@ -10,9 +12,11 @@ import {
   routesFor,
   type Assets,
 } from "./layout.ts";
+import { docsFile } from "./markdown.ts";
 import {
   resolveOptions,
   type FolioOptions,
+  type PackageInfo,
   type ResolvedOptions,
 } from "./options.ts";
 import { loadSite, type Site } from "./site.ts";
@@ -36,9 +40,20 @@ export function entryModule(root: string, options: ResolvedOptions): string {
   ].join("\n");
 }
 
+/** The nearest `package.json` at or above `dir`, or none. */
+export function readPackage(dir: string): PackageInfo {
+  for (let current = dir; ; current = dirname(current)) {
+    const file = join(current, "package.json");
+    if (existsSync(file))
+      return JSON.parse(readFileSync(file, "utf8")) as PackageInfo;
+    if (dirname(current) === current) return {};
+  }
+}
+
 type Route =
   | { kind: "home" }
   | { kind: "page"; slug: string }
+  | { kind: "file"; path: string }
   | { kind: "missing" };
 
 /** Matches a request path below `base` to a route; null means not a page request. */
@@ -48,8 +63,37 @@ export function matchRoute(path: string, base: string): Route | null {
   if (rest === "" || rest === "index.html") return { kind: "home" };
   const page = /^docs\/([a-z0-9-]+)(?:\.html|\/index\.html)?$/.exec(rest);
   if (page) return { kind: "page", slug: page[1] ?? "" };
+  const file = docsFile.exec(rest.slice("docs/".length));
+  if (rest.startsWith("docs/") && file)
+    return { kind: "file", path: file[1] ?? "" };
   if (rest.startsWith("docs/") || rest === "docs") return { kind: "missing" };
   return null;
+}
+
+const mediaTypes: Record<string, string> = {
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  svg: "image/svg+xml",
+  webp: "image/webp",
+  avif: "image/avif",
+};
+
+/** Preloads the Latin Geist faces, which every page paints with first. */
+function fontPreloads(bundle: Rolldown.OutputBundle, base: string): string[] {
+  return Object.values(bundle)
+    .filter(
+      (file) =>
+        file.type === "asset" &&
+        /\/geist(?:-mono)?-latin-wght-normal-[\w-]+\.woff2$/.test(
+          file.fileName,
+        ),
+    )
+    .map(
+      (file) =>
+        `<link rel="preload" href="${base}${file.fileName}" as="font" type="font/woff2" crossorigin>`,
+    );
 }
 
 function renderRoute(
@@ -61,7 +105,8 @@ function renderRoute(
 ) {
   const routes = routesFor(base);
   const shared = { options, routes, pages: site.pages, assets };
-  if (route.kind === "home") return { status: 200, html: homePage(shared) };
+  if (route.kind === "home")
+    return { status: 200, html: homePage({ ...shared, home: site.home }) };
   const page =
     route.kind === "page" ? site.rendered.get(route.slug) : undefined;
   if (route.kind === "page" && page) {
@@ -73,15 +118,32 @@ function renderRoute(
   return { status: 404, html: notFoundPage(shared) };
 }
 
-export function folio(input: FolioOptions): Plugin {
-  const options = resolveOptions(input);
+interface Response {
+  status: number;
+  type: string;
+  body: string | Buffer;
+}
+
+export function folio(input: FolioOptions = {}): Plugin {
+  let options: ResolvedOptions;
   let config: ResolvedConfig;
 
-  async function serve(server: ViteDevServer, url: string) {
+  async function serve(
+    server: ViteDevServer,
+    url: string,
+  ): Promise<Response | null> {
     const path = decodeURIComponent(url.split(/[?#]/)[0] ?? "");
     const route = matchRoute(path, config.base);
     if (!route) return null;
     const site = await loadSite(config.root, options, routesFor(config.base));
+    if (route.kind === "file") {
+      if (!site.files.includes(route.path)) return null;
+      return {
+        status: 200,
+        type: mediaTypes[extname(route.path).slice(1)] ?? "",
+        body: await readFile(join(config.root, options.docs, route.path)),
+      };
+    }
     // transformIndexHtml adds the base to this path.
     const assets = {
       head: `<script type="module" src="/@id/${entryId}"></script>`,
@@ -93,7 +155,11 @@ export function folio(input: FolioOptions): Plugin {
       config.base,
       assets,
     );
-    return { status, html: await server.transformIndexHtml(url, html) };
+    return {
+      status,
+      type: "text/html; charset=utf-8",
+      body: await server.transformIndexHtml(url, html),
+    };
   }
 
   return {
@@ -108,6 +174,7 @@ export function folio(input: FolioOptions): Plugin {
     },
     configResolved(resolved) {
       config = resolved;
+      options = resolveOptions(input, readPackage(resolved.root));
     },
     resolveId(id) {
       return id === entryId ? resolvedEntryId : null;
@@ -119,21 +186,20 @@ export function folio(input: FolioOptions): Plugin {
       const docs = join(config.root, options.docs);
       server.watcher.add(docs);
       server.watcher.on("change", (file) => {
-        if (file.startsWith(docs) && file.endsWith(".md"))
-          server.ws.send({ type: "full-reload" });
+        if (file.startsWith(docs)) server.ws.send({ type: "full-reload" });
       });
       server.middlewares.use(async (req, res, next) => {
         if (req.method !== "GET" || !req.url) return next();
-        let page: Awaited<ReturnType<typeof serve>>;
+        let response: Response | null;
         try {
-          page = await serve(server, req.url);
+          response = await serve(server, req.url);
         } catch (error) {
           return next(error);
         }
-        if (!page) return next();
-        res.statusCode = page.status;
-        res.setHeader("Content-Type", "text/html; charset=utf-8");
-        res.end(page.html);
+        if (!response) return next();
+        res.statusCode = response.status;
+        res.setHeader("Content-Type", response.type);
+        res.end(response.body);
       });
     },
     async generateBundle(_, bundle) {
@@ -147,14 +213,21 @@ export function folio(input: FolioOptions): Plugin {
         throw new Error("folio: the client entry was not built");
       const css = [...(entry.viteMetadata?.importedCss ?? [])];
       const head = [
+        ...fontPreloads(bundle, config.base),
         ...css.map(
           (file) => `<link rel="stylesheet" href="${config.base}${file}">`,
         ),
         `<script type="module" src="${config.base}${entry.fileName}"></script>`,
       ].join("\n");
       const site = await loadSite(config.root, options, routesFor(config.base));
-      const emit = (fileName: string, source: string) =>
+      const emit = (fileName: string, source: string | Uint8Array) =>
         this.emitFile({ type: "asset", fileName, source });
+      const sources = await Promise.all(
+        site.files.map((file) =>
+          readFile(join(config.root, options.docs, file)),
+        ),
+      );
+      site.files.forEach((file, i) => emit(`docs/${file}`, sources[i]!));
       const assets = { head };
       emit(
         "index.html",

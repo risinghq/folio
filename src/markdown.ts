@@ -20,6 +20,8 @@ export interface RenderedPage {
   headings: Heading[];
   /** The island names the page mounts, in order. */
   islands: string[];
+  /** The docs folder's files the page's images show, relative to the folder. */
+  files: string[];
 }
 
 export interface RenderContext {
@@ -28,7 +30,20 @@ export interface RenderContext {
   pageUrl: (slug: string) => string;
   /** Where a `.md` link that is not a manual page points, such as GitHub. */
   sourceUrl: (file: string) => string;
+  /** The URL the site serves a file of the docs folder at. */
+  fileUrl: (file: string) => string;
+  /**
+   * The pixel size of a docs folder image. The `<img>` carries it so the page
+   * keeps the image's space before it loads.
+   */
+  imageSize?: (file: string) => { width: number; height: number };
+  /** Renders a paragraph of nothing but links as a row of buttons. */
+  actions?: boolean;
 }
+
+/** An image path inside the docs folder, such as `shots/home.png`. */
+export const docsFile =
+  /^(?:\.\/)?((?:[\w-]+\/)*[\w-]+\.(?:png|jpe?g|gif|svg|webp|avif))$/;
 
 /** `<!-- island NAME -->` on its own line places a mounted component. */
 const islandComment = /^<!--\s*island\s+([a-z0-9-]+)\s*-->\s*$/;
@@ -75,6 +90,7 @@ export function renderPage(
   const ids = new WeakMap<Tokens.Heading, string>();
   const headings: Heading[] = [];
   const islands: string[] = [];
+  const files: string[] = [];
   let title = "";
   let summary = "";
 
@@ -101,6 +117,44 @@ export function renderPage(
           .filter(Boolean)
           .join(" ");
         return `<a ${attrs}>${this.parser.parseInline(tokens)}</a>`;
+      },
+      image({ href, title: imageTitle, text }: Tokens.Image) {
+        const file = docsFile.exec(href)?.[1];
+        if (file && !files.includes(file)) files.push(file);
+        const size = file ? context.imageSize?.(file) : undefined;
+        const attrs = [
+          `src="${escapeHtml(file ? context.fileUrl(file) : href)}"`,
+          `alt="${escapeHtml(text)}"`,
+          imageTitle ? `title="${escapeHtml(imageTitle)}"` : "",
+          size ? `width="${size.width}" height="${size.height}"` : "",
+          'loading="lazy"',
+        ]
+          .filter(Boolean)
+          .join(" ");
+        return `<img ${attrs}>`;
+      },
+      paragraph({ tokens }: Tokens.Paragraph) {
+        const inner = this.parser.parseInline(tokens);
+        const links = tokens.filter((token) => token.type === "link");
+        const onlyLinks =
+          links.length > 0 &&
+          tokens.every(
+            (token) =>
+              token.type === "link" ||
+              (token.type === "text" && token.raw.trim() === ""),
+          );
+        if (!context.actions || !onlyLinks) return `<p>${inner}</p>\n`;
+        const buttons = links
+          .map((token, index) =>
+            this.parser
+              .parseInline([token])
+              .replace(
+                "<a ",
+                `<a class="btn ${index === 0 ? "btn-primary" : "btn-ghost"}" `,
+              ),
+          )
+          .join("");
+        return `<p class="actions">${buttons}</p>\n`;
       },
       table(token: Tokens.Table) {
         const cell = (entry: Tokens.TableCell, tag: string) => {
@@ -145,5 +199,6 @@ export function renderPage(
       headings.push({ id, title: plain(heading.text), depth: heading.depth });
   }
 
-  return { title, summary, html: marked.parser(tokens), headings, islands };
+  const html = marked.parser(tokens);
+  return { title, summary, html, headings, islands, files };
 }

@@ -1,4 +1,4 @@
-/* Controls for a landing or an island. Their class names are public API. */
+/* Controls for an island or the home page. Their class names are public API. */
 
 .btn {
   display: inline-flex;

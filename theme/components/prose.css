@@ -43,15 +43,29 @@
 .prose li::marker {
   color: var(--faint);
 }
-.prose a {
+.prose a:not(.btn) {
   color: var(--text);
   text-decoration: underline;
   text-decoration-color: var(--accent);
   text-decoration-thickness: 1.5px;
   text-underline-offset: 4px;
 }
-.prose a:hover {
+.prose a:not(.btn):hover {
   color: var(--accent);
+}
+.prose img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 0 24px;
+  border: 1px solid var(--line-subtle);
+  border-radius: var(--r-lg);
+}
+.prose .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 28px 0 48px;
 }
 .prose .anchor {
   color: inherit;

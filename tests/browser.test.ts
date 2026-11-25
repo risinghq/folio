@@ -38,11 +38,12 @@ afterAll(async () => {
 });
 
 describe("the built site in a browser", () => {
-  it("mounts the landing island", async () => {
+  it("mounts an island on the home page", async () => {
     await page.goto(url);
-    await expect(
-      page.locator("[data-island=counter]").textContent(),
-    ).resolves.toBe("counter mounted");
+    const island = page.locator(".home [data-island=counter]");
+    await island.scrollIntoViewIfNeeded();
+    await island.locator("p").waitFor();
+    await expect(island.textContent()).resolves.toBe("counter mounted");
   });
 
   it("mounts an article island as it nears the viewport", async () => {

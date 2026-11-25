@@ -23,7 +23,6 @@ beforeAll(async () => {
         title: "Fixture",
         repository: "https://github.com/o/r",
         islands: "src/islands.ts",
-        landing: "counter",
       }),
     ],
   });
@@ -71,6 +70,30 @@ describe("build", () => {
       script?.slice(7),
     );
     expect(style && read(style)).toContain("--accent");
-    expect(html).toContain('data-island="counter" data-eager');
+  });
+
+  it("renders the docs folder's index.md as the home page", () => {
+    const html = read("index.html");
+    expect(html).toContain("<h1>Fixture home</h1>");
+    expect(html).toContain(
+      '<p class="actions"><a class="btn btn-primary" href="/site/docs/getting-started">',
+    );
+    expect(html).toContain('data-island="counter"');
+  });
+
+  it("copies the images a page shows into the build", () => {
+    expect(read("index.html")).toContain(
+      '<img src="/site/docs/images/shot.svg" alt="The fixture" width="16" height="9" loading="lazy">',
+    );
+    expect(read("docs/images/shot.svg")).toContain("<svg");
+  });
+
+  it("preloads the text fonts before the stylesheet", () => {
+    const html = read("index.html");
+    expect(html).toMatch(
+      /<link rel="preload" href="\/site\/assets\/geist-latin-wght-normal-[\w-]+\.woff2" as="font" type="font\/woff2" crossorigin>/,
+    );
+    const preload = html.indexOf('rel="preload"');
+    expect(preload).toBeLessThan(html.indexOf('rel="stylesheet"'));
   });
 });
