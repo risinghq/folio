@@ -32,7 +32,7 @@
   --code-tag: oklch(0.95 0.006 75);
   --code-attr: oklch(0.76 0.08 240);
 
-  --font: "Geist Variable", "Geist Fallback", system-ui, sans-serif;
+  --font: "Figtree Variable", "Figtree Fallback", system-ui, sans-serif;
   --mono: "Geist Mono Variable", "Geist Mono Fallback", ui-monospace, monospace;
   --r-xs: 4px;
   --r-sm: 6px;

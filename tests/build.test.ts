@@ -91,7 +91,7 @@ describe("build", () => {
   it("preloads the text fonts before the stylesheet", () => {
     const html = read("index.html");
     expect(html).toMatch(
-      /<link rel="preload" href="\/site\/assets\/geist-latin-wght-normal-[\w-]+\.woff2" as="font" type="font\/woff2" crossorigin>/,
+      /<link rel="preload" href="\/site\/assets\/figtree-latin-wght-normal-[\w-]+\.woff2" as="font" type="font\/woff2" crossorigin>/,
     );
     const preload = html.indexOf('rel="preload"');
     expect(preload).toBeLessThan(html.indexOf('rel="stylesheet"'));

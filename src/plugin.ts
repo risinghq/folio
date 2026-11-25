@@ -31,7 +31,7 @@ export function entryModule(root: string, options: ResolvedOptions): string {
   const font = (name: string) =>
     `import ${JSON.stringify(require.resolve(name))};`;
   return [
-    font("@fontsource-variable/geist"),
+    font("@fontsource-variable/figtree"),
     font("@fontsource-variable/geist-mono"),
     `import "@risinghq/folio/theme.css";`,
     `import { start } from "@risinghq/folio/client";`,
@@ -80,13 +80,13 @@ const mediaTypes: Record<string, string> = {
   avif: "image/avif",
 };
 
-/** Preloads the Latin Geist faces, which every page paints with first. */
+/** Preloads the Latin text and code faces, which every page paints with first. */
 function fontPreloads(bundle: Rolldown.OutputBundle, base: string): string[] {
   return Object.values(bundle)
     .filter(
       (file) =>
         file.type === "asset" &&
-        /\/geist(?:-mono)?-latin-wght-normal-[\w-]+\.woff2$/.test(
+        /\/(?:figtree|geist-mono)-latin-wght-normal-[\w-]+\.woff2$/.test(
           file.fileName,
         ),
     )
