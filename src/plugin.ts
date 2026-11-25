@@ -1,5 +1,4 @@
 import { isAbsolute, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import type { Plugin, ResolvedConfig, ViteDevServer } from "vite";
 
@@ -19,22 +18,12 @@ import { loadSite, type Site } from "./site.ts";
 
 const entryId = "virtual:folio/entry";
 const resolvedEntryId = `\0${entryId}`;
-// Resolved from this file, which runs as src/plugin.ts in tests and as
-// dist/plugin.js when installed; both sit one level below the package root.
-// The browser runtime ships as TypeScript because Vite compiles it.
-const packageFile = (path: string) =>
-  fileURLToPath(new URL(path, import.meta.url));
-
-/** The client entry: theme, fonts, the project's islands, then the runtime. */
 function entryModule(root: string, options: ResolvedOptions): string {
   const islands = options.islands
     ? `import islands from ${JSON.stringify(isAbsolute(options.islands) ? options.islands : resolve(root, options.islands))};`
     : "const islands = {};";
   return [
-    `import "@fontsource-variable/geist";`,
-    `import "@fontsource-variable/geist-mono";`,
-    `import ${JSON.stringify(packageFile("../theme/theme.css"))};`,
-    `import { start } from ${JSON.stringify(packageFile("../src/client/index.ts"))};`,
+    `import { start } from "@risinghq/folio/client";`,
     islands,
     `start(islands);`,
   ].join("\n");

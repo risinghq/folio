@@ -6,7 +6,6 @@
   "license": "MIT",
   "files": [
     "dist",
-    "src",
     "theme"
   ],
   "type": "module",
@@ -15,7 +14,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./client": "./src/client/index.ts",
+    "./client": {
+      "types": "./dist/client/index.d.ts",
+      "default": "./dist/client/index.js"
+    },
     "./highlight": {
       "types": "./dist/highlight.d.ts",
       "default": "./dist/highlight.js"
@@ -25,7 +27,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "prepare": "bun run build",
-    "check": "bun run lint && bun run typecheck && bun run test",
+    "check": "bun run lint && bun run typecheck && bun run build && bun run test",
     "fix": "oxlint --fix && oxfmt",
     "lint": "oxlint --deny-warnings && oxfmt --check",
     "test": "vitest run",
